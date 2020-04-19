@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-
+fplot = True
 fix_noise = True
 log_count_rate = True
 
@@ -29,6 +29,12 @@ if __name__ == '__main__':
         time = pickle.load(handle).reshape(-1, 1)
     with open('../processed_data/uv/uv_band_count_rates.pickle', 'rb') as handle:
         uv_band_count_rates = pickle.load(handle).reshape(-1, 1)
+
+    if fplot:
+        plt.scatter(time, uv_band_count_rates, s=2)
+        plt.xlabel('Julian Days')
+        plt.ylabel('UW2 Magnitude')
+        plt.savefig('experiment_figures/data_plots/UV_data.png')
 
     if log_count_rate:
         uv_band_count_rates = np.log(uv_band_count_rates)

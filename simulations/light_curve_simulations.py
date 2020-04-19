@@ -106,7 +106,6 @@ if __name__ == '__main__':
 
     from scipy import optimize
 
-
     def linear_res(mc, freq, pow):
         return (mc[0]*freq + mc[1]) - pow
 

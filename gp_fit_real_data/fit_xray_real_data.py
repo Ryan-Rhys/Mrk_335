@@ -11,8 +11,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+fplot = True
 fix_noise = True
 log_count_rate = True
+re_exp = False  # Whether to re-exponentiate the logged GP fit.
 
 if log_count_rate:
     folder = 'log_xray'
@@ -28,12 +30,21 @@ if __name__ == '__main__':
     with open('../processed_data/xray/x_ray_band_count_rates.pickle', 'rb') as handle:
         x_ray_band_count_rates = pickle.load(handle).reshape(-1, 1)
 
+    if fplot:
+        plt.scatter(time, x_ray_band_count_rates, s=2)
+        plt.xlabel('Julian Days')
+        plt.ylabel('XRT count rate($s^{-1}$)')
+        plt.savefig('experiment_figures/data_plots/Xray_data.png')
+
     if log_count_rate:
         x_ray_band_count_rates = np.log(x_ray_band_count_rates)
 
     band_scaler = StandardScaler()
     x_ray_band_count_rates = band_scaler.fit_transform(x_ray_band_count_rates, x_ray_band_count_rates)  # second argument is a dummy argument as StandardScaler expects train inputs and targets
     x_ray_band_count_rates_plot = band_scaler.inverse_transform(x_ray_band_count_rates)  # plot in the original domain (be that log or otherwise)
+
+    if re_exp:
+        x_ray_band_count_rates_plot = np.exp(x_ray_band_count_rates_plot)  # unlogged count rate values.
 
     time_test = np.arange(54236, 58630, 1).reshape(-1, 1)
     time_scaler = StandardScaler()
@@ -62,7 +73,7 @@ if __name__ == '__main__':
 
         if fix_noise:
 
-            fixed_noise = 0.01  # was 0.05 previously. Treating this as jitter now in log domain.
+            fixed_noise = 0.0001  # was 0.05 previously. Treating this as jitter now in log domain.
             m.likelihood.variance = fixed_noise
             m.likelihood.variance.trainable = False
 
@@ -75,12 +86,21 @@ if __name__ == '__main__':
         lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
         upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
 
-        # Sample from posterior of best-fit kernels
-
         if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
+            sample = m.predict_f_samples(time_test, 1).squeeze()
+            sample = band_scaler.inverse_transform(sample)
+            if re_exp:
+                sample = np.exp(sample)
+                np.savetxt('individual_plot_parameters/xray/one_off_reexp_sample_{}_noise_{}.txt'.format(name, fixed_noise), sample, fmt='%.2f')
+            else:
+                np.savetxt('individual_plot_parameters/xray/one_off_orig_sample_{}_noise_{}.txt'.format(name, fixed_noise), sample, fmt='%.2f')
 
-            samples = m.predict_f_samples(time_test, 10000).squeeze()
-            np.savetxt('samples/xray/x_ray_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
+        # Sample from posterior of best-fit kernels for lag computation (comment out when plotting fits to data)
+
+        # if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
+        #
+        #     samples = m.predict_f_samples(time_test, 10000).squeeze()
+        #     np.savetxt('samples/xray/x_ray_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
 
         if fix_noise:
             np.savetxt('experiment_params/' + folder + '/real_mean_and_{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), mean, fmt='%.2f')
@@ -104,18 +124,41 @@ if __name__ == '__main__':
         upper = band_scaler.inverse_transform(upper)
         lower = band_scaler.inverse_transform(lower)
 
-        plt.plot(time_plot, x_ray_band_count_rates_plot, '+', markersize=7, mew=0.2)  # time plot are original times
+        if re_exp:
+            mean = np.exp(mean)
+            upper = np.exp(upper)
+            lower = np.exp(lower)
+            np.savetxt('individual_plot_parameters/xray/one_off_reexp_mean_{}_noise_{}.txt'.format(name, fixed_noise),
+                       mean, fmt='%.2f')
+            np.savetxt('individual_plot_parameters/xray/one_off_reexp_upper_{}_noise_{}.txt'.format(name, fixed_noise),
+                       upper, fmt='%.2f')
+            np.savetxt('individual_plot_parameters/xray/one_off_reexp_lower_{}_noise_{}.txt'.format(name, fixed_noise),
+                       lower, fmt='%.2f')
+        else:
+            np.savetxt('individual_plot_parameters/xray/one_off_orig_mean_{}_noise_{}.txt'.format(name, fixed_noise),
+                       mean, fmt='%.2f')
+            np.savetxt('individual_plot_parameters/xray/one_off_orig_upper_{}_noise_{}.txt'.format(name, fixed_noise),
+                       upper, fmt='%.2f')
+            np.savetxt('individual_plot_parameters/xray/one_off_orig_lower_{}_noise_{}.txt'.format(name, fixed_noise),
+                       lower, fmt='%.2f')
+
+        plt.scatter(time_plot, x_ray_band_count_rates_plot, s=4, color='g', alpha=1)  # time plot are original times
         plt.xlabel('Time (days)')
         if log_count_rate:
-            plt.ylabel('Log X-ray Band Count Rate')
+            if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
+                plt.plot(time_test_plot, sample, lw=0.6, alpha=0.3, color='r')
+            if re_exp:
+                plt.ylabel('X-ray Band Count Rate')
+            else:
+                plt.ylabel('Log X-ray Band Count Rate')
         else:
             plt.ylabel('Xray Band Count Rate')
         plt.title('X-ray Lightcurve Mrk 335 {}'.format(name))
-        line, = plt.plot(time_test_plot, mean, lw=2)
-        #_ = plt.fill_between(time_test_plot[:, 0], lower, upper, color=line.get_color(), alpha=0.2)
+        line, = plt.plot(time_test_plot, mean, lw=1.1, alpha=0.5)
+        _ = plt.fill_between(time_test_plot[:, 0], lower, upper, color=line.get_color(), alpha=0.05)
 
         if fix_noise:
-            plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_mean_only.png'.format(name, log_lik, fixed_noise))
+            plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_mean_only_re_exp_orig_space.png'.format(name, log_lik, fixed_noise))
         else:
             plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik.png'.format(name, log_lik))
 
