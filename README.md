@@ -1,14 +1,11 @@
 # Mrk_335
 Modelling the Multiwavelength Variability of Mrk-335
 
-# Environment
+## Installation
 
-`conda create -n mrk python=3.6`
-
-`pip install gpflow==1.5.1`
-
-`pip install tensorflow==1.15.0`
-
-`conda install astropy`
-
-`conda install scikit-learn==0.22.1`
+```
+conda create -n mrk python==3.7
+conda install astropy scikit-learn matplotlib
+conda install -c conda-forge statsmodels
+pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
+```
