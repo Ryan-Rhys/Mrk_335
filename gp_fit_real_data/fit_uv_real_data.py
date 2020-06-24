@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 fix_noise = True  # Whether to fix the noise level
 folder = 'uv'  # Folder in which to save the results
 generate_samples = False  # Whether to generate samples from the best-fit kernels.
+plot_mean = False  # Whether to plot the GP mean or the samples
 
 m = None
 
@@ -98,15 +99,16 @@ if __name__ == '__main__':
             if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
 
                 samples = m.predict_f_samples(time_test, 10000).squeeze()
+                samples = count_scaler.inverse_transform(samples)
                 np.savetxt('samples/uv/uv_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
 
                 # for viewing the samples.
 
                 plt.plot(time_test, samples[0, :].reshape(-1, 1), lw=2, label='sample 1')
                 plt.plot(time_test, samples[100, :].reshape(-1, 1), lw=2, label='sample 2')
-                plt.xlabel('Standardised Time')
-                plt.ylabel('Standardised UV Band Count Rate')
-                plt.title('Gaussian Process Samples from Matern-1/2 Kernel')
+                plt.xlabel('Time')
+                plt.ylabel('UV Band Count Rate')
+                plt.title('Gaussian Process Samples from {} Kernel'.format(name))
                 plt.show()
 
         np.savetxt('experiment_params/' + folder + '/real_mean_and_{}.txt'.format(name), mean, fmt='%.2f')
@@ -124,36 +126,95 @@ if __name__ == '__main__':
 
         # Plot the results
 
-        fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-        ax.scatter(time, uv_band_count_rates, marker='+', s=10)
-        plt.xlabel('Time (days)')
-        plt.ylabel('UV Band Count Rate')
-        plt.title('UV Lightcurve Mrk 335 {}'.format(name))
-        plt.ylim(12.4, 15.5)
-        line, = plt.plot(time_test, mean, lw=1, color=(0.25, 0.75, 0.5), alpha=0.5)
-        _ = plt.fill_between(time_test[:, 0], lower, upper, color=line.get_color(), alpha=0.2)
+        uncertainty_color = "#00b764"
 
-        # Create an inset
+        if plot_mean:
 
-        axins = zoomed_inset_axes(ax, 3.2, loc=2)  # zoom-factor: 3.2, location: top-left
-        axins.scatter(time, uv_band_count_rates, marker='+', s=10)
-        inset_line, = axins.plot(time_test, mean, lw=1, color=(0.25, 0.75, 0.5), alpha=0.5)
-        _ = axins.fill_between(time_test[:, 0], lower, upper, color=inset_line.get_color(), alpha=0.2)
+            mean_color = "#00b764"
 
-        x1, x2, y1, y2 = 56475, 56725, 12.95, 13.48  # specify the limits
-        axins.set_xlim(x1, x2)  # apply the x-limits
-        axins.set_ylim(y1, y2)  # apply the y-limits
-        mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")  # mark inset
-        plt.yticks(visible=False)
-        plt.xticks(visible=False)
-        axins.set_xticks([])
-        axins.set_yticks([])
+            fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+            ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            plt.xlabel('Time (days)')
+            plt.ylabel('UV Band Count Rate')
+            plt.title('UV Lightcurve Mrk 335 {}'.format(name))
+            plt.ylim(12.4, 14.75)
+            plt.xlim(54150, 58700)
+            plt.xticks([55000, 56000, 57000, 58000])
+            plt.yticks([13, 13.5, 14, 14.5])
+            line, = plt.plot(time_test, mean, lw=1, color=mean_color, alpha=0.75)
+            _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
-        if fix_noise:
-            plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise.png'.format(name, log_lik, fixed_noise))
+            # Create an inset
+
+            axins = zoomed_inset_axes(ax, 2.5, loc=2)  # zoom-factor: 2.5, location: top-left
+            axins.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            inset_line, = axins.plot(time_test, mean, lw=1, color=mean_color, alpha=0.75)
+            _ = axins.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
+
+            x1, x2, y1, y2 = 56475, 56725, 12.95, 13.48  # specify the limits
+            axins.set_xlim(x1, x2)  # apply the x-limits
+            axins.set_ylim(y1, y2)  # apply the y-limits
+            mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")  # mark inset
+            plt.yticks(visible=False)
+            plt.xticks(visible=False)
+            axins.set_xticks([])
+            axins.set_yticks([])
+
+            if fix_noise:
+                plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_color_{}_mean.png'.format(name, log_lik, fixed_noise, mean_color))
+            else:
+                plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_{}_color_mean.png'.format(name, log_lik, mean_color))
+
+            plt.close()
+
         else:
-            plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik.png'.format(name, log_lik))
 
-        plt.close()
+            sample_color = "#ff3203"
+
+            # Generate a sample
+
+            sample = m.predict_f_samples(time_test)
+            sample = count_scaler.inverse_transform(sample)
+
+            fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+            ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            plt.xlabel('Time (days)')
+            plt.ylabel('UV Band Count Rate')
+            plt.title('UV Lightcurve Mrk 335 {}'.format(name))
+            plt.ylim(12.4, 15.5)
+            plt.xlim(54150, 58700)
+            plt.xticks([55000, 56000, 57000, 58000])
+            plt.yticks([13, 14, 15])
+            line, = plt.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
+            _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
+
+            # Create an inset
+
+            axins = zoomed_inset_axes(ax, 3.2, loc=2)  # zoom-factor: 3.2, location: top-left
+            axins.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            inset_line, = axins.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
+            _ = axins.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
+
+            x1, x2, y1, y2 = 56475, 56725, 12.95, 13.48  # specify the limits
+            axins.set_xlim(x1, x2)  # apply the x-limits
+            axins.set_ylim(y1, y2)  # apply the y-limits
+            mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")  # mark inset
+            plt.yticks(visible=False)
+            plt.xticks(visible=False)
+            axins.set_xticks([])
+            axins.set_yticks([])
+
+            if fix_noise:
+                plt.savefig(
+                    'experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_color_{}_sample.png'.format(name,
+                                                                                                                log_lik,
+                                                                                                                fixed_noise,
+                                                                                                                sample_color))
+            else:
+                plt.savefig(
+                    'experiment_figures/' + folder + '/{}_and_{}_log_lik_{}_color_sample.png'.format(name, log_lik,
+                                                                                                   sample_color))
+
+            plt.close()
 
         print('{} ML: {}'.format(k, m.log_marginal_likelihood()))
