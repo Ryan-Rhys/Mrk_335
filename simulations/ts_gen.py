@@ -1,8 +1,8 @@
 """
-Script for generating simulated time series using the mehtod of Timmer and Konig (1995).
+Script for generating simulated time series using the method of Timmer and Konig (1995).
 """
 
-from numpy import array, log, zeros, sqrt, arange, exp, real, pi, interp, conj
+from numpy import log, zeros, sqrt, arange, exp, real, pi, interp, conj
 from numpy.random import normal
 from numpy.fft import fft
 

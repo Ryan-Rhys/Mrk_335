@@ -14,9 +14,11 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+import tensorflow as tf
+
 fix_noise = True  # Whether to fix the noise level
 folder = 'uv'  # Folder in which to save the results
-generate_samples = False  # Whether to generate samples from the best-fit kernels.
+generate_samples = True  # Whether to generate samples from the best-fit kernels.
 plot_mean = False  # Whether to plot the GP mean or the samples
 
 m = None
@@ -98,18 +100,9 @@ if __name__ == '__main__':
 
             if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
 
-                samples = m.predict_f_samples(time_test, 10000).squeeze()
+                samples = tf.squeeze(m.predict_f_samples(time_test, 10000))
                 samples = count_scaler.inverse_transform(samples)
                 np.savetxt('samples/uv/uv_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
-
-                # for viewing the samples.
-
-                plt.plot(time_test, samples[0, :].reshape(-1, 1), lw=2, label='sample 1')
-                plt.plot(time_test, samples[100, :].reshape(-1, 1), lw=2, label='sample 2')
-                plt.xlabel('Time')
-                plt.ylabel('UV Band Count Rate')
-                plt.title('Gaussian Process Samples from {} Kernel'.format(name))
-                plt.show()
 
         np.savetxt('experiment_params/' + folder + '/real_mean_and_{}.txt'.format(name), mean, fmt='%.2f')
         np.savetxt('experiment_params/' + folder + '/real_error_upper_and{}.txt'.format(name), upper, fmt='%.2f')

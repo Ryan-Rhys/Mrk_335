@@ -14,9 +14,11 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+import tensorflow as tf
+
 fix_noise = True
 folder = 'xray'
-generate_samples = False  # Whether to generate samples from the best-fit kernels.
+generate_samples = True  # Whether to generate samples from the best-fit kernels.
 plot_mean = True  # Whether to plot the GP mean or the samples (True = mean, False = sample)
 
 m = None
@@ -99,7 +101,7 @@ if __name__ == '__main__':
 
             if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
 
-                samples = m.predict_f_samples(time_test, 10000).squeeze()
+                samples = tf.squeeze(m.predict_f_samples(time_test, 10000))
                 samples = count_scaler.inverse_transform(samples)
                 np.savetxt('samples/xray/xray_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
 
