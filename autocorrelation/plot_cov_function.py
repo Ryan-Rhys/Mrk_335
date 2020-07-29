@@ -22,9 +22,7 @@ def rational_quadratic(alpha, lengthscale, kernel_variance, r):
     """
 
     fract = (r/lengthscale)**2 * 1/(2*alpha)
-
     k_rq = (1 + fract)**(-alpha)
-
     k_rq *= kernel_variance
 
     return k_rq
@@ -42,7 +40,6 @@ def ornstein_uhlenbeck(lengthscale, kernel_variance, r):
     """
 
     k_ou = np.exp(-r/lengthscale)
-
     k_ou *= kernel_variance
 
     return k_ou
@@ -59,9 +56,7 @@ def squared_exponential(lengthscale, kernel_variance, r):
     """
 
     scaled_squared_dist = (r/lengthscale)**2
-
     k_sqe = np.exp(-0.5*scaled_squared_dist)
-
     k_sqe *= kernel_variance
 
     return k_sqe
@@ -73,12 +68,11 @@ def matern12(lengthscale, kernel_variance, r):
 
     :param lengthscale: The lengthscale
     :param kernel_variance:  The kernel variance
-    :param r:
+    :param r: The absolute distance in input space
     :return: the kernel function evaluated at a list of values r.
     """
 
     scaled_distance = (r/lengthscale)
-
     k = kernel_variance*np.exp(-scaled_distance)
 
     return k

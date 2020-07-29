@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 
-from mrk_utils import load_sim_data, rss_func
+from simulation_utils import load_sim_data, rss_func
 
 fix_noise = True
 

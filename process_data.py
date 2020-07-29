@@ -9,13 +9,14 @@ import pickle
 from matplotlib import pyplot as plt
 import numpy as np
 
-
 f_plot = True  # Whether to plot the data on processing
 f_plot_errors = True  # Whether to plot the errors on processing
 
 if __name__ == '__main__':
 
     with open('raw_data/mkn335_xrt_uvot_lc.dat', 'rb') as file:
+
+        # Observational data for the x-ray and UV bands of Mrk-335 including measurement errors.
 
         x_ray_times = []
         x_ray_band_count_rates = []
@@ -25,7 +26,7 @@ if __name__ == '__main__':
         uv_band_count_rates = []
         uv_band_count_errors = []
 
-        i = 1
+        i = 1  # Used simply to skip the first line.
 
         for line in file:
             if i > 1:
@@ -50,12 +51,16 @@ if __name__ == '__main__':
 
             i += 1
 
-    x_ray_times = np.array(x_ray_times)
-    x_ray_band_count_rates = np.array(x_ray_band_count_rates)
-    x_ray_band_count_errors = np.array(x_ray_band_count_errors)
-    uv_times = np.array(uv_times)
-    uv_band_count_rates = np.array(uv_band_count_rates)
-    uv_band_count_errors = np.array(uv_band_count_errors)
+    # typecast to float64.
+
+    x_ray_times = np.array(x_ray_times, dtype=np.float64)
+    x_ray_band_count_rates = np.array(x_ray_band_count_rates, dtype=np.float64)
+    x_ray_band_count_errors = np.array(x_ray_band_count_errors, dtype=np.float64)
+    uv_times = np.array(uv_times, dtype=np.float64)
+    uv_band_count_rates = np.array(uv_band_count_rates, dtype=np.float64)
+    uv_band_count_errors = np.array(uv_band_count_errors, dtype=np.float64)
+
+    # Visualise the data
 
     if f_plot:
         plt.scatter(x_ray_times, x_ray_band_count_rates, s=15, marker='.')
@@ -88,6 +93,8 @@ if __name__ == '__main__':
         plt.title('UV Errors for Mrk 335')
         plt.savefig('plots/uv_errors_for_mrk_335')
         plt.show()
+
+    # Save the data in the processed_data folder.
 
     with open('processed_data/xray/x_ray_times.pickle', 'wb') as handle:
         pickle.dump(x_ray_times, handle, protocol=pickle.HIGHEST_PROTOCOL)

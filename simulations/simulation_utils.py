@@ -1,7 +1,7 @@
 # Copyright Ryan-Rhys Griffiths 2019
 # Author: Ryan-Rhys Griffiths
 """
-This module contains utilties for the mrk-335 experiments.
+This module contains utilities for the mrk-335 simulation experiments.
 """
 
 import pickle
