@@ -6,11 +6,10 @@ This script performs a structure function analysis of the GP lightcurves for the
 
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.ticker import StrMethodFormatter
 
 from structure_function_utils import compute_gp_structure_function
 
-use_matern = True
+use_matern = False
 n_samples = 5
 resolution = 5.3
 
@@ -45,9 +44,6 @@ if __name__ == '__main__':
     plt.errorbar(x_ray_tao_plot, x_ray_mean_structure_function, yerr=x_ray_std_structure_function, fmt='o', markersize=3, linewidth=1)
     plt.xscale('log')
     plt.yscale('log')
-    plt.ylim(0.1, 3)
-    plt.yticks([0.5, 1, 1.5, 2])
-    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))  # no decimal places
     plt.xlabel(r'$\tau$' + ' (days)')
     plt.ylabel('SF')
     plt.title('XRT Structure Function')
@@ -71,9 +67,6 @@ if __name__ == '__main__':
     plt.errorbar(uv_tao_plot, uv_mean_structure_function, yerr=uv_std_structure_function, fmt='o', markersize=3, linewidth=1)
     plt.xscale('log')
     plt.yscale('log')
-    plt.ylim(0.005, 0.15)
-    plt.yticks([0.01, 0.1])
-    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))  # no decimal places
     plt.xlabel(r'$\tau$' + ' (days)')
     plt.ylabel('SF')
     plt.title('UVW2 Structure Function')
