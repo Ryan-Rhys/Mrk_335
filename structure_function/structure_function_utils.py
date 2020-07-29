@@ -133,6 +133,11 @@ def compute_gp_structure_function(sample, time_grid, resolution):
                     structure_function_val = np.square(sample[running_index] - sample[time_index])
                     structure_function_pairs.append(structure_function_val)
 
+                # Can induce a speed-up
+
+                elif time_difference > bin_end_val:
+                    break
+
                 running_index += 1
 
         if len(structure_function_pairs) < 6:
