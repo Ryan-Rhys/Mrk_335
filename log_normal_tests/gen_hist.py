@@ -21,18 +21,18 @@ if __name__ == '__main__':
 
     # plot the histogram
     plt.hist(uv_band_count_rates, bins=20)
-    plt.xlabel('UV Band Count Rates')
+    plt.xlabel('Swift Observed UVOT Magnitudes')
     plt.ylabel('Frequency')
-    plt.title('Histogram of UV Band Count Rates')
-    plt.savefig('test_figures/uv_histogram.png')
+    #plt.title('Observed UVOT Magnitudes')
+    plt.savefig('figures/uv_histogram.png')
     plt.clf()
 
     # plot the empirical cdf (ecdf)
     ecdf_uv = ECDF(uv_band_count_rates)
     plt.plot(ecdf_uv.x, ecdf_uv.y)
-    plt.xlabel('UV Band Count Rate')
+    plt.xlabel('Observed UVOT Magnitudes')
     plt.title('Empirical Cumulative Distribution Function for the UV Band Count Rate')
-    plt.savefig('test_figures/uv_ecdf')
+    plt.savefig('figures/uv_ecdf')
     plt.clf()
 
     # plot the probability plot
@@ -42,12 +42,12 @@ if __name__ == '__main__':
     if pp_normal:
         res = stats.probplot(uv_band_count_rates, dist=stats.norm, plot=ax)
         ax.set_title("UV Band Probability Plot for Gaussian Distribution")
-        plt.savefig('test_figures/uv_prob_plot')
+        plt.savefig('figures/uv_prob_plot')
 
     else:
         res = stats.probplot(np.log(uv_band_count_rates), dist=stats.norm, plot=ax)
         ax.set_title("UV Band Probability Plot for Log-Gaussian Distribution")
-        plt.savefig('test_figures/uv_log_prob_plot')
+        plt.savefig('figures/uv_log_prob_plot')
 
     plt.clf()
 
@@ -55,10 +55,10 @@ if __name__ == '__main__':
         xray_band_count_rates = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
 
     plt.hist(xray_band_count_rates, bins=20)
-    plt.xlabel('X-ray Band Count Rates')
+    plt.xlabel('Swift Observed X-ray Count Rates')
     plt.ylabel('Frequency')
-    plt.title('Histogram of X-ray Band Count Rates')
-    plt.savefig('test_figures/xray_histogram')
+    #plt.title('Swift Observed X-ray Count Rates')
+    plt.savefig('figures/xray_histogram')
     plt.clf()
 
     # plot the empirical cdf (ecdf)
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     plt.plot(ecdf_xray.x, ecdf_xray.y)
     plt.xlabel('X-ray Band Count Rate')
     plt.title('Empirical Cumulative Distribution Function for the X-ray Band Count Rate')
-    plt.savefig('test_figures/xray_ecdf')
+    plt.savefig('figures/xray_ecdf')
     plt.clf()
 
     # plot the probability plot
@@ -77,16 +77,15 @@ if __name__ == '__main__':
 
         res = stats.probplot(xray_band_count_rates, dist=stats.norm, plot=ax)
         ax.set_title("X-ray Band Probability Plot for Gaussian Distribution")
-        plt.savefig('test_figures/xray_prob_plot')
+        plt.savefig('figures/xray_prob_plot')
 
     else:
         res = stats.probplot(np.log(xray_band_count_rates), dist=stats.norm, plot=ax)
         ax.set_title("X-ray Band Probability Plot for Log-Gaussian Distribution")
-        plt.savefig('test_figures/xray_log_prob_plot')
+        plt.savefig('figures/xray_log_prob_plot')
 
     plt.clf()
 
     print(stats.kstest(uv_band_count_rates, 'norm', args=(np.mean(uv_band_count_rates), np.std(uv_band_count_rates))))  # null vs alternative hypothesis for sample1. Dont reject equal distribution against alternative hypothesis: greater
     print(stats.kstest(np.log(xray_band_count_rates), 'norm', args=(np.mean(np.log(xray_band_count_rates)), np.std(np.log(xray_band_count_rates)))))
     print(stats.ks_2samp(uv_band_count_rates, uv_band_count_rates))
-    print('hi')
