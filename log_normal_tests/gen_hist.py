@@ -5,13 +5,13 @@ Script for generating histograms of the UVOT and XROT observations from Mrk-335.
 Empirical Cumulative Distribution Function (ECDF) and PP plots are also provided.
 """
 
-import argparse
 import pickle
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np
 from scipy import stats
+from scipy.stats import gaussian_kde
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
@@ -24,13 +24,17 @@ def main():
         uv_band_count_rates = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
 
     # plot the histogram
-    plt.hist(uv_band_count_rates, bins=20)
+    plt.hist(uv_band_count_rates, bins=20, color="#00b764", alpha=0.5, density=True)
+    density = gaussian_kde(uv_band_count_rates)
+    xs = np.linspace(np.min(uv_band_count_rates), np.max(uv_band_count_rates), 200)
+    plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.yticks([0, 1, 2], fontsize=12)
     plt.xlabel('Swift Observed UVOT Magnitudes', fontsize=16, fontname='Times New Roman')
-    plt.ylabel('Frequency', fontsize=16, fontname='Times New Roman')
+    plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
     plt.gca().invert_xaxis()
-    plt.savefig('figures/uv_histogram.png')
+    plt.tight_layout()
+    plt.savefig('figures/new_uv_histogram.png')
     plt.clf()
 
     # plot the empirical cdf (ecdf) for the UV magnitudes. Must take negative sign in order to reverse.
@@ -65,12 +69,16 @@ def main():
         # We log the x-ray band count rates for hte histogram
         xray_band_count_rates = np.log(xray_band_count_rates)
 
-    plt.hist(xray_band_count_rates, bins=20)
+    plt.hist(xray_band_count_rates, bins=20, color="#e65802", alpha=0.5, density=True)
+    density = gaussian_kde(xray_band_count_rates)
+    xs = np.linspace(np.min(xray_band_count_rates), np.max(xray_band_count_rates), 200)
+    plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.yticks([0, 0.2, 0.4], fontsize=12)
     plt.xlabel('Swift Observed X-ray Log Count Rates', fontsize=16, fontname='Times New Roman')
-    plt.ylabel('Frequency', fontsize=16, fontname='Times New Roman')
-    plt.savefig('figures/xray_histogram')
+    plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
+    plt.tight_layout()
+    plt.savefig('figures/new_xray_histogram')
     plt.clf()
 
     # plot the empirical cdf (ecdf) for the x-ray band count rate

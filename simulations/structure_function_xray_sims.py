@@ -18,7 +18,6 @@ GROUND_TRUTH_FILE = 'sim_curves/xray_lightcurves_no_gaps.dat'
 
 resolution = 5.3
 nsims = 1000  # number of simulated curves i.e length of gapped_file
-ground_truth = True  # Whether to compute gapped or ground truth structure functions
 kernel = 'Matern'  # ['Matern', 'RQ']
 
 if __name__ == '__main__':

@@ -20,12 +20,21 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
-
-TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
-GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
-GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
+exp = False  # Whether to use exponentiated UV magnitude lightcurve simulations. Should be false
 generate_samples = True  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
+f_plot = True  # Whether to plot the simulated lightcurves.
+
+TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
+
+if exp:
+    GAPPED_FILE = 'sim_curves/w2_exp_lightcurves.dat'
+    GROUND_TRUTH_FILE = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
+    tag = 'exp_'
+else:
+    GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
+    GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
+    tag = ''
 
 
 def objective_closure():
@@ -39,27 +48,15 @@ if __name__ == '__main__':
 
     tf.random.set_seed(42)
 
-    time, test_times, gapped_count_rates, ground_truth_count_rates = load_sim_data(TIMINGS_FILE,
+    train_times, test_times, gapped_count_rates, ground_truth_count_rates_matrix = load_sim_data(TIMINGS_FILE,
                                                                                    GAPPED_FILE,
                                                                                    GROUND_TRUTH_FILE)
     n_sims = gapped_count_rates.shape[0]
 
-    # Standardize the timings
-
-    time_scaler = StandardScaler()
-    train_times = time_scaler.fit_transform(time)
-    test_times = time_scaler.transform(test_times)
-
     # Add jitter ot the count rates to avoid numerical issues.
 
     jitter = 1e-10
-    ground_truth_count_rates += jitter
-
-    # Standardize the count rates
-
-    count_rate_scaler = StandardScaler()
-    gapped_rates_matrix = count_rate_scaler.fit_transform(gapped_count_rates)
-    ground_truth_rates_matrix = count_rate_scaler.fit_transform(ground_truth_count_rates)  # Check this! fit transform instead of transform
+    ground_truth_count_rates_matrix += jitter
 
     # We do kernel selection by comparison of the negative log marginal likelihood.
 
@@ -89,8 +86,13 @@ if __name__ == '__main__':
         best_rss = 1000000000000000
         best_rss_kernel = ''
 
-        gapped_rates = np.reshape(gapped_rates_matrix[i, :], (-1, 1))
-        ground_truth_rates = np.reshape(ground_truth_rates_matrix[i, :], (-1, 1))
+        gapped_rates = np.reshape(gapped_count_rates[i, :], (-1, 1))
+        ground_truth_rates = ground_truth_count_rates_matrix[i, :]
+
+        # Standardize the count rates
+
+        count_rate_scaler = StandardScaler()
+        gapped_rates = count_rate_scaler.fit_transform(gapped_rates)
 
         for k in kernel_list:
 
@@ -115,13 +117,15 @@ if __name__ == '__main__':
             except Exception:
                 continue
 
-            mean, var = m.predict_y(test_times)
-            rss = rss_func(np.reshape(mean, len(test_times), ), np.reshape(ground_truth_rates, len(test_times), ))
+            mean, _ = m.predict_y(test_times)
+            mean = count_rate_scaler.inverse_transform(mean)
+            num_points = len(mean)  # number of points where GP prediction and ground truth are compared.
 
-            log_lik = m.log_marginal_likelihood()
+            rss = rss_func(np.squeeze(mean), ground_truth_rates)/num_points
+            log_lik = m.log_marginal_likelihood()  # metric is intrinsic to the fit.
 
-            lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
-            upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
+            # lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
+            # upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
 
             if log_lik > best_log_lik:
                 best_kernel = name
@@ -131,22 +135,57 @@ if __name__ == '__main__':
                 best_rss_kernel = name
                 best_rss = rss
 
-            np.savetxt('uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.2f')
-            np.savetxt('uv_sims_stand/var/var_{}_iteration_{}.txt'.format(name, i), var, fmt='%.2f')
-            np.savetxt('uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
+            np.savetxt('{}uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(tag, name, i), mean, fmt='%.2f')
+            np.savetxt('{}uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(tag, name, i),
                        np.array(log_lik).reshape(-1, 1), fmt='%.2f')
-            np.savetxt('uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
+            np.savetxt('{}uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(tag, name, i), np.array(rss).reshape(-1, 1),
                        fmt='%.2f')
 
-            plt.plot(train_times, gapped_rates, '+', markersize=7, mew=0.2, label='observations')
-            plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='ground truth light curve')
-            plt.xlabel('Standardised Time')
-            plt.ylabel('Standardised Log UV Band Count Rate')
-            plt.title('UV Lightcurve Mrk 335 {}'.format(name))
-            line, = plt.plot(test_times, mean, lw=2, label='GP fit')
-            _ = plt.fill_between(test_times[:, 0], lower, upper, color=line.get_color(), alpha=0.2)
-            plt.legend(loc=3)
-            #plt.show()
+            if f_plot:
+
+                # Plot the gapped data points observed by GP
+
+                plt.scatter(train_times, count_rate_scaler.inverse_transform(gapped_rates), marker='+', s=10, color='k', label='Observations')
+                plt.xlabel('Time (days)')
+                plt.ylabel('UVW2 Band Magnitudes')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/uv/data_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                # Plot the ground truth light curve
+
+                plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='Ground Truth Light Curve')
+                plt.xlabel('Time (days)')
+                plt.ylabel('UVW2 Band Magnitudes')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/uv/ground_truth_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                line, = plt.plot(test_times, mean, lw=2, label='GP Fit')
+                plt.xlabel('Time (days)')
+                plt.ylabel('UVW2 Band Magnitudes')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/uv/gp_fit_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                fig, ax = plt.subplots(1)
+                plt.scatter(test_times, mean, marker='+', s=3, color="#00b764", label='GP Predictive Mean')
+                plt.scatter(test_times, ground_truth_rates, marker='o', s=3, color='k', label='Ground Truth Light Curve')
+                # Residual plot
+                difference = np.squeeze(mean) - ground_truth_rates
+                plt.yticks([13.3, 13.7])
+                plt.xticks([55500, 55525, 55550])
+                plt.xlim(55500, 55550)
+                plt.ylim(13.2, 13.8)
+                ax.vlines(test_times, mean, ground_truth_rates, color='k', linewidth=0.2)
+                plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
+                plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
+                plt.legend()
+                plt.savefig('residuals_figures/uv/residual_plot_{}_iteration_{}.png'.format(name, i))
+                plt.close()
 
             if generate_samples:
 
@@ -155,7 +194,7 @@ if __name__ == '__main__':
                 if name == 'Matern_12 Kernel' or name == 'Rational Quadratic Kernel':
                     samples = np.squeeze(m.predict_f_samples(test_times, 1))
                     samples = count_rate_scaler.inverse_transform(samples)
-                    np.savetxt('SF_samples/uv/SF_uv_samples_{}_iteration_{}.txt'.format(name, i), samples, fmt='%.2f')
+                    np.savetxt('SF_samples/uv/{}SF_uv_samples_{}_iteration_{}.txt'.format(tag, name, i), samples, fmt='%.2f')
 
         end_time = real_time.time()
         print(f'iteration time is {end_time - start_time}')
@@ -169,10 +208,10 @@ if __name__ == '__main__':
         print(str(score_dict))
         print(str(rss_dict))
 
-        file = open('uv_sims_stand/log_lik_scores/log_lik_scores.txt', "w")
+        file = open('{}uv_sims_stand/log_lik_scores/log_lik_scores.txt'.format(tag), "w")
         file.write(str(score_dict))
         file.close()
 
-        file = open('uv_sims_stand/rss_scores/rss_scores.txt', "w")
+        file = open('{}uv_sims_stand/rss_scores/rss_scores.txt'.format(tag), "w")
         file.write(str(rss_dict))
         file.close()

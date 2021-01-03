@@ -13,6 +13,7 @@ kernel = 'Matern'  # ['Matern' 'RQ'] are the options
 
 if __name__ == '__main__':
 
+    # 5.3 is the resolution, multiplied by 10 to enable file saving.
     if kernel == 'Matern':
         tag = f'Matern_53_days_averaged_{n_samples}_samples'
     else:

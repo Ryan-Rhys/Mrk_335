@@ -91,7 +91,8 @@ def compute_structure_function(sample, time_grid, errors):
 
 def compute_gp_structure_function(sample, time_grid, resolution):
     """
-    Computes the structure function for a GP lightcurve
+    Computes the structure function for a GP lightcurve. Error computation has different form to obervational
+    structure function.
 
     :param sample: The GP sample
     :param time_grid: The time grid on which the sample is taken.
