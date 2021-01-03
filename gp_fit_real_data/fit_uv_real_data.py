@@ -13,12 +13,10 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-
 import tensorflow as tf
 
 fix_noise = True  # Whether to fix the noise level
-folder = 'uv'  # Folder in which to save the results
-generate_samples = True  # Whether to generate samples from the best-fit kernels.
+generate_samples = False  # Whether to generate samples from the best-fit kernels.
 plot_mean = False  # Whether to plot the GP mean or the samples
 
 m = None
@@ -104,10 +102,10 @@ if __name__ == '__main__':
                 samples = count_scaler.inverse_transform(samples)
                 np.savetxt('samples/uv/uv_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
 
-        np.savetxt('experiment_params/' + folder + '/real_mean_and_{}.txt'.format(name), mean, fmt='%.2f')
-        np.savetxt('experiment_params/' + folder + '/real_error_upper_and{}.txt'.format(name), upper, fmt='%.2f')
-        np.savetxt('experiment_params/' + folder + '/real_error_lower_and{}.txt'.format(name), lower, fmt='%.2f')
-        file = open('experiment_params/' + folder + '/trainables_and{}.txt'.format(name), "w")
+        np.savetxt('experiment_params/uv/real_mean_and_{}.txt'.format(name), mean, fmt='%.2f')
+        np.savetxt('experiment_params/uv/real_error_upper_and{}.txt'.format(name), upper, fmt='%.2f')
+        np.savetxt('experiment_params/uv/real_error_lower_and{}.txt'.format(name), lower, fmt='%.2f')
+        file = open('experiment_params/uv/trainables_and{}.txt'.format(name), "w")
         file.write('log likelihood of model is :' + str(log_lik))
         file.close()
 
@@ -119,21 +117,26 @@ if __name__ == '__main__':
 
         # Plot the results
 
-        uncertainty_color = "#00b764"
+        if name == 'Matern_12_Kernel':
+            uncertainty_color = "#00b764"
+        else:
+            uncertainty_color = '#0d9a00'
 
         if plot_mean:
 
-            mean_color = "#00b764"
+            if name == 'Matern_12_Kernel':
+                mean_color = "#00b764"
+            else:
+                mean_color = "#0d9a00"
 
             fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
             ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
-            plt.xlabel('Time (days)')
-            plt.ylabel('UV Band Count Rate')
-            plt.title('UV Lightcurve Mrk 335 {}'.format(name))
-            plt.ylim(12.4, 14.75)
+            plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
+            plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
+            plt.ylim(11.15, 14.2)
             plt.xlim(54150, 58700)
-            plt.xticks([55000, 56000, 57000, 58000])
-            plt.yticks([13, 13.5, 14, 14.5])
+            plt.xticks([55000, 56000, 57000, 58000], fontsize=12)
+            plt.yticks([12, 13, 14], fontsize=12)
             line, = plt.plot(time_test, mean, lw=1, color=mean_color, alpha=0.75)
             _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
@@ -152,17 +155,19 @@ if __name__ == '__main__':
             plt.xticks(visible=False)
             axins.set_xticks([])
             axins.set_yticks([])
+            ax.invert_yaxis()
 
             if fix_noise:
-                plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_color_{}_mean.png'.format(name, log_lik, fixed_noise, mean_color))
+                plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_and_{}_noise_color_{}_mean.png'.format(name, log_lik, fixed_noise, mean_color))
             else:
-                plt.savefig('experiment_figures/' + folder + '/{}_and_{}_log_lik_{}_color_mean.png'.format(name, log_lik, mean_color))
-
+                plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_{}_color_mean.png'.format(name, log_lik, mean_color))
             plt.close()
 
         else:
-
-            sample_color = "#ff3203"
+            if name == 'Matern_12_Kernel':
+                sample_color = "#00b764"
+            else:
+                sample_color = "#0d9a00"
 
             # Generate a sample
 
@@ -171,19 +176,18 @@ if __name__ == '__main__':
 
             fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
             ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
-            plt.xlabel('Time (days)')
-            plt.ylabel('UV Band Count Rate')
-            plt.title('UV Lightcurve Mrk 335 {}'.format(name))
-            plt.ylim(12.4, 15.5)
+            plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
+            plt.ylabel('UVW1 Band Magnitudes', fontsize=16, fontname='Times New Roman')
+            plt.ylim(11.15, 14.2)
             plt.xlim(54150, 58700)
-            plt.xticks([55000, 56000, 57000, 58000])
-            plt.yticks([13, 14, 15])
+            plt.xticks([55000, 56000, 57000, 58000], fontsize=12)
+            plt.yticks([12, 13, 14], fontsize=12)
             line, = plt.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
             _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
             # Create an inset
 
-            axins = zoomed_inset_axes(ax, 3.2, loc=2)  # zoom-factor: 3.2, location: top-left
+            axins = zoomed_inset_axes(ax, 2.5, loc=2)  # zoom-factor: 3.2, location: top-left
             axins.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
             inset_line, = axins.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
             _ = axins.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
@@ -196,17 +200,15 @@ if __name__ == '__main__':
             plt.xticks(visible=False)
             axins.set_xticks([])
             axins.set_yticks([])
+            ax.invert_yaxis()
 
             if fix_noise:
-                plt.savefig(
-                    'experiment_figures/' + folder + '/{}_and_{}_log_lik_and_{}_noise_color_{}_sample.png'.format(name,
-                                                                                                                log_lik,
-                                                                                                                fixed_noise,
-                                                                                                                sample_color))
+                plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_and_{}_noise_color_{}_sample.png'.format(name,
+                                                                                                              log_lik,
+                                                                                                              fixed_noise,
+                                                                                                              sample_color))
             else:
-                plt.savefig(
-                    'experiment_figures/' + folder + '/{}_and_{}_log_lik_{}_color_sample.png'.format(name, log_lik,
-                                                                                                   sample_color))
+                plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_{}_color_sample.png'.format(name, log_lik, sample_color))
 
             plt.close()
 

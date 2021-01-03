@@ -11,7 +11,7 @@ import numpy as np
 
 def load_sim_data(timings_file, gapped_count_rate_file, ground_truth_count_rate_file):
     """
-    Load the simulation data. Return
+    Load the simulation data.
 
     :param timings_file: The timings of the actual dataset
     :param gapped_count_rate_file: The count rate of the simulated light curves with gaps
