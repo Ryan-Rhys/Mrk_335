@@ -24,6 +24,8 @@ fix_noise = True
 TIMINGS_FILE = '../processed_data/xray_simulations/x_ray_sim_times.pickle'
 GAPPED_FILE = 'sim_curves/xray_lightcurves.dat'
 GROUND_TRUTH_FILE = 'sim_curves/xray_lightcurves_no_gaps.dat'
+generate_samples = True  # Whether to generate samples to be used in structure function computation.
+start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
 
 
 def objective_closure():
@@ -148,6 +150,15 @@ if __name__ == '__main__':
             _ = plt.fill_between(test_times[:, 0], lower, upper, color=line.get_color(), alpha=0.2)
             plt.legend(loc=3)
             #plt.show()
+
+            if generate_samples:
+
+                # Sample from posterior of best-fit kernels.
+
+                if name == 'Matern_12 Kernel' or name == 'Rational Quadratic Kernel':
+                    samples = np.squeeze(m.predict_f_samples(test_times, 1))
+                    samples = count_rate_scaler.inverse_transform(samples)
+                    np.savetxt('SF_samples/xray/SF_xray_samples_{}_iteration_{}.txt'.format(name, i), samples, fmt='%.2f')
 
         end_time = real_time.time()
         print(f'iteration time is {end_time - start_time}')
