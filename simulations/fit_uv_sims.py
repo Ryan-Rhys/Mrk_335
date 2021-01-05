@@ -23,7 +23,7 @@ fix_noise = True
 exp = False  # Whether to use exponentiated UV magnitude lightcurve simulations. Should be false
 generate_samples = True  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
-f_plot = True  # Whether to plot the simulated lightcurves.
+f_plot = False  # Whether to plot the simulated lightcurves.
 
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
 

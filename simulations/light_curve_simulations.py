@@ -1,5 +1,4 @@
-# Copyright Ryan-Rhys Griffiths 2019
-# Author: Ryan-Rhys Griffiths
+# Authors: Douglas Buisson, Ryan-Rhys Griffiths
 """
 This script generates simulated light curves. Timmer and Konig's algorithm generates Gaussian flux distributions.
 """
