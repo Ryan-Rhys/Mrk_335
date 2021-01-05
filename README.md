@@ -1,5 +1,7 @@
 # Modelling the Multiwavelength Variability of Mrk-335 using Gaussian Processes
 
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 This code repository contains all source code for the paper.
 
 UVW2            |  X-ray
