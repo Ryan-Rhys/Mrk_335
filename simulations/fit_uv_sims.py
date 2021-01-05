@@ -20,21 +20,13 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
-exp = False  # Whether to use exponentiated UV magnitude lightcurve simulations. Should be false
 generate_samples = True  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
 f_plot = False  # Whether to plot the simulated lightcurves.
 
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
-
-if exp:
-    GAPPED_FILE = 'sim_curves/w2_exp_lightcurves.dat'
-    GROUND_TRUTH_FILE = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
-    tag = 'exp_'
-else:
-    GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
-    GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
-    tag = ''
+GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
+GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
 
 
 def objective_closure():
@@ -49,8 +41,8 @@ if __name__ == '__main__':
     tf.random.set_seed(42)
 
     train_times, test_times, gapped_count_rates, ground_truth_count_rates_matrix = load_sim_data(TIMINGS_FILE,
-                                                                                   GAPPED_FILE,
-                                                                                   GROUND_TRUTH_FILE)
+                                                                                                 GAPPED_FILE,
+                                                                                                 GROUND_TRUTH_FILE)
     n_sims = gapped_count_rates.shape[0]
 
     # Add jitter ot the count rates to avoid numerical issues.
@@ -81,9 +73,9 @@ if __name__ == '__main__':
                        kernel_list[2]: 'Matern_32 Kernel', kernel_list[3]: 'Matern_52_Kernel',
                        kernel_list[4]: 'Rational Quadratic Kernel'}
 
-        best_log_lik = -1000000
+        best_log_lik = -1000000  # set to arbitrary large negative value
         best_kernel = ''
-        best_rss = 1000000000000000
+        best_rss = 1000000000000000  # set to arbitrary large value
         best_rss_kernel = ''
 
         gapped_rates = np.reshape(gapped_count_rates[i, :], (-1, 1))
@@ -208,10 +200,10 @@ if __name__ == '__main__':
         print(str(score_dict))
         print(str(rss_dict))
 
-        file = open('{}uv_sims_stand/log_lik_scores/log_lik_scores.txt'.format(tag), "w")
+        file = open('uv_sims_stand/log_lik_scores/log_lik_scores.txt', "w")
         file.write(str(score_dict))
         file.close()
 
-        file = open('{}uv_sims_stand/rss_scores/rss_scores.txt'.format(tag), "w")
+        file = open('uv_sims_stand/rss_scores/rss_scores.txt', "w")
         file.write(str(rss_dict))
         file.close()

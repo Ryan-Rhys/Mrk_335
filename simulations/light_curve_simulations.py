@@ -14,7 +14,6 @@ from ts_gen import ts_gen
 
 RAW_DATA_PATH = '../raw_data/mkn335_xrt_uvot_lc.dat'
 PROCESSED_DATA_PATH = '../processed_data/'
-exp = False  # Whether to exponentiate UV magnitudes. Should be false
 
 
 if __name__ == '__main__':
@@ -24,12 +23,8 @@ if __name__ == '__main__':
     gapped_output_xray_dat = 'sim_curves/xray_lightcurves_new.dat'
     full_output_xray_dat = 'sim_curves/xray_lightcurves_no_gaps_new.dat'
 
-    if exp:
-        gapped_output_uv_dat = 'sim_curves/w2_exp_lightcurves.dat'
-        full_output_uv_dat = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
-    else:
-        gapped_output_uv_dat = 'sim_curves/w2_lightcurves.dat'
-        full_output_uv_dat = 'sim_curves/w2_lightcurves_no_gaps.dat'
+    gapped_output_uv_dat = 'sim_curves/w2_lightcurves.dat'
+    full_output_uv_dat = 'sim_curves/w2_lightcurves_no_gaps.dat'
 
     # Read data
 
@@ -69,7 +64,7 @@ if __name__ == '__main__':
             #p.plot(treg, xreg, 'k')
             prev_split = split
 
-    xf, xp, xe = psd(tregs, xregs)
+    xf, xp, xe = psd(tregs, np.log(xregs))  # calculate psd in log space
 
     # W2 PSD
 
@@ -215,11 +210,7 @@ if __name__ == '__main__':
 
     gap_file = open(gapped_output_uv_dat, 'wb')
 
-    # convert to count rates if exp is True.
-    if exp:
-        pickle.dump(np.exp(wlightcurves), gap_file)
-    else:
-        pickle.dump(wlightcurves, gap_file)
+    pickle.dump(wlightcurves, gap_file)
     gap_file.close()
     #ascii.write(wlightcurves, output_uv_dat)
     # we use pickle because ascii can't deal with large files

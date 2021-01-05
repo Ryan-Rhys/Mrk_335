@@ -20,12 +20,13 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
+generate_samples = True  # Whether to generate samples to be used in structure function computation.
+start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
+f_plot = False
 
 TIMINGS_FILE = '../processed_data/xray_simulations/x_ray_sim_times.pickle'
 GAPPED_FILE = 'sim_curves/xray_lightcurves.dat'
 GROUND_TRUTH_FILE = 'sim_curves/xray_lightcurves_no_gaps.dat'
-generate_samples = True  # Whether to generate samples to be used in structure function computation.
-start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
 
 
 def objective_closure():
@@ -39,32 +40,20 @@ if __name__ == '__main__':
 
     tf.random.set_seed(42)
 
-    time, test_times, gapped_count_rates, ground_truth_count_rates = load_sim_data(TIMINGS_FILE,
-                                                                                   GAPPED_FILE,
-                                                                                   GROUND_TRUTH_FILE)
+    train_times, test_times, gapped_count_rates, ground_truth_count_rates_matrix = load_sim_data(TIMINGS_FILE,
+                                                                                                 GAPPED_FILE,
+                                                                                                 GROUND_TRUTH_FILE)
     n_sims = gapped_count_rates.shape[0]
-
-    # Standardize the timings
-
-    time_scaler = StandardScaler()
-    train_times = time_scaler.fit_transform(time)
-    test_times = time_scaler.transform(test_times)
 
     # Add jitter ot the count rates to avoid numerical issues with log transform of zero values.
 
     jitter = 1e-10
-    ground_truth_count_rates += jitter
+    ground_truth_count_rates_matrix += jitter
 
     # Log transform the count rates
 
     log_gapped_count_rates = np.log(gapped_count_rates)
-    log_ground_truth_count_rates = np.log(ground_truth_count_rates)
-
-    # Standardize the log count rates
-
-    count_rate_scaler = StandardScaler()
-    gapped_rates_matrix = count_rate_scaler.fit_transform(log_gapped_count_rates)
-    ground_truth_rates_matrix = count_rate_scaler.fit_transform(log_ground_truth_count_rates)
+    log_ground_truth_count_rates_matrix = np.log(ground_truth_count_rates_matrix)
 
     # We do kernel selection by comparison of the negative log marginal likelihood.
 
@@ -74,7 +63,7 @@ if __name__ == '__main__':
     rss_dict = {'RBF Kernel': 0, 'Matern_12 Kernel': 0, 'Matern_32 Kernel': 0, 'Matern_52_Kernel': 0,
                 'Rational Quadratic Kernel': 0}
 
-    for i in range(0, n_sims):
+    for i in range(start_sim_number, n_sims):
         tf.random.set_seed(i)
         start_time = real_time.time()
         print(i)
@@ -94,8 +83,13 @@ if __name__ == '__main__':
         best_rss = 1000000000000000  # set to arbitrary large value
         best_rss_kernel = ''
 
-        gapped_rates = np.reshape(gapped_rates_matrix[i, :], (-1, 1))
-        ground_truth_rates = np.reshape(ground_truth_rates_matrix[i, :], (-1, 1))
+        gapped_rates = np.reshape(log_gapped_count_rates[i, :], (-1, 1))
+        ground_truth_rates = log_ground_truth_count_rates_matrix[i, :]
+
+        # Standardize the count rates
+
+        count_rate_scaler = StandardScaler()
+        gapped_rates = count_rate_scaler.fit_transform(gapped_rates)
 
         for k in kernel_list:
 
@@ -118,13 +112,15 @@ if __name__ == '__main__':
             except Exception:
                 continue
 
-            mean, var = m.predict_y(test_times)
-            rss = rss_func(np.reshape(mean, len(test_times), ), np.reshape(ground_truth_rates, len(test_times), ))
+            mean, _ = m.predict_y(test_times)
+            mean = count_rate_scaler.inverse_transform(mean)
+            num_points = len(mean)  # number of points where GP prediction and ground truth are compared.
 
+            rss = rss_func(np.squeeze(mean), ground_truth_rates)/num_points
             log_lik = m.log_marginal_likelihood()
 
-            lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
-            upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
+            # lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
+            # upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
 
             if log_lik > best_log_lik:
                 best_kernel = name
@@ -135,21 +131,57 @@ if __name__ == '__main__':
                 best_rss = rss
 
             np.savetxt('xray_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.2f')
-            np.savetxt('xray_sims_stand/var/var_{}_iteration_{}.txt'.format(name, i), var, fmt='%.2f')
             np.savetxt('xray_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
                        np.array(log_lik).reshape(-1, 1), fmt='%.2f')
             np.savetxt('xray_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
                        fmt='%.2f')
 
-            plt.plot(train_times, gapped_rates, '+', markersize=7, mew=0.2, label='observations')
-            plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='ground truth light curve')
-            plt.xlabel('Standardised Time')
-            plt.ylabel('Standardised Log Xray Band Count Rate')
-            plt.title('X-ray Lightcurve Mrk 335 {}'.format(name))
-            line, = plt.plot(test_times, mean, lw=2, label='GP fit')
-            _ = plt.fill_between(test_times[:, 0], lower, upper, color=line.get_color(), alpha=0.2)
-            plt.legend(loc=3)
-            #plt.show()
+            if f_plot:
+                # Plot the gapped data points observed by GP
+
+                plt.scatter(train_times, count_rate_scaler.inverse_transform(gapped_rates), marker='+', s=10, color='k',
+                            label='Observations')
+                plt.xlabel('Time (days)')
+                plt.ylabel('X-ray Band Log Count Rates')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/xray/data_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                # Plot the ground truth light curve
+
+                plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='Ground Truth Light Curve')
+                plt.xlabel('Time (days)')
+                plt.ylabel('X-Ray Band Log Count Rates')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/xray/ground_truth_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                line, = plt.plot(test_times, mean, lw=2, label='GP Fit')
+                plt.xlabel('Time (days)')
+                plt.ylabel('X-ray Band Log Count Rates')
+                plt.legend(loc=3)
+                plt.tight_layout()
+                plt.savefig('residuals_figures/xray/gp_fit_{}_iteration_{}.png'.format(name, i))
+                plt.close()
+
+                fig, ax = plt.subplots(1)
+                plt.scatter(test_times, mean, marker='+', s=3, color="#e65802", label='GP Predictive Mean')
+                plt.scatter(test_times, ground_truth_rates, marker='o', s=3, color='k',
+                            label='Ground Truth Light Curve')
+                # Residual plot
+                difference = np.squeeze(mean) - ground_truth_rates
+                plt.yticks([-4, -2])
+                plt.xticks([55500, 55525, 55550])
+                plt.xlim(55500, 55550)
+                plt.ylim(-5, 0)
+                ax.vlines(test_times, mean, ground_truth_rates, color='k', linewidth=0.2)
+                plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
+                plt.ylabel('X-Ray Band Log Count Rates', fontsize=16, fontname='Times New Roman')
+                plt.legend()
+                plt.savefig('residuals_figures/xray/residual_plot_{}_iteration_{}.png'.format(name, i))
+                plt.close()
 
             if generate_samples:
 
