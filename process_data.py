@@ -74,8 +74,8 @@ if __name__ == '__main__':
         plt.scatter(uv_times, uv_band_count_rates, s=15, marker='.')
         plt.errorbar(uv_times, uv_band_count_rates, yerr=uv_band_count_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
         plt.xlabel('Time')
-        plt.ylabel('UV Band Count Rate')
-        plt.title('UV Data for Mrk 335')
+        plt.ylabel('UVW2 Band Magnitudes')
+        plt.title('UVW2 Data for Mrk 335')
         plt.savefig('plots/uv_data_for_mrk_335')
         plt.show()
 
@@ -89,22 +89,22 @@ if __name__ == '__main__':
         plt.clf()
         plt.scatter(uv_times, uv_band_count_errors, s=10)
         plt.xlabel('Time')
-        plt.ylabel('UV Band Count Errors')
-        plt.title('UV Errors for Mrk 335')
+        plt.ylabel('UVW2 Band Count Errors')
+        plt.title('UVW2 Errors for Mrk 335')
         plt.savefig('plots/uv_errors_for_mrk_335')
         plt.show()
 
     # Save the data in the processed_data folder.
 
-    with open('processed_data/xray/x_ray_times.pickle', 'wb') as handle:
-        pickle.dump(x_ray_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/xray/x_ray_band_count_rates.pickle', 'wb') as handle:
-        pickle.dump(x_ray_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/xray/x_ray_band_count_errors.pickle', 'wb') as handle:
-        pickle.dump(x_ray_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_times.pickle', 'wb') as handle:
-        pickle.dump(uv_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_band_count_rates.pickle', 'wb') as handle:
-        pickle.dump(uv_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_band_count_errors.pickle', 'wb') as handle:
-        pickle.dump(uv_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/xray/x_ray_times.pickle', 'wb') as handle:
+    #     pickle.dump(x_ray_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/xray/x_ray_band_count_rates.pickle', 'wb') as handle:
+    #     pickle.dump(x_ray_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/xray/x_ray_band_count_errors.pickle', 'wb') as handle:
+    #     pickle.dump(x_ray_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/uv/uv_times.pickle', 'wb') as handle:
+    #     pickle.dump(uv_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/uv/uv_band_count_rates.pickle', 'wb') as handle:
+    #     pickle.dump(uv_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open('processed_data/uv/uv_band_count_errors.pickle', 'wb') as handle:
+    #     pickle.dump(uv_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
