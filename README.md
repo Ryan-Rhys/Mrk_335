@@ -2,6 +2,11 @@
 
 This code repository contains all source code for the paper.
 
+UVW2            |  X-ray
+:-------------------------:|:-------------------------:
+<img src="uv_gp.png" width="500" title="UVW2 Band GP Lightcurve">|    <img src="xray.png" width="500" title="X-Ray Band GP Lightcurve">
+
+
 ## Installation
 
 ```

@@ -30,7 +30,7 @@ def main():
     plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
     plt.yticks([0, 1, 2], fontsize=12)
-    plt.xlabel('Swift Observed UVOT Magnitudes', fontsize=16, fontname='Times New Roman')
+    #plt.xlabel('Swift Observed UVOT Magnitudes', fontsize=16, fontname='Times New Roman')
     plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
     plt.gca().invert_xaxis()
     plt.tight_layout()
@@ -40,10 +40,11 @@ def main():
     # plot the empirical cdf (ecdf) for the UV magnitudes. Must take negative sign in order to reverse.
     ecdf_uv = ECDF(-uv_band_count_rates)
     plt.plot(ecdf_uv.x, ecdf_uv.y)
-    plt.xticks(fontsize=12, labels=['14.0', '13.8', '13.6', '13.4', '13.2', '13.0', '12.8', '12.6'],
-               ticks=[-14.0, -13.8, -13.6, -13.4, -13.2, -13.0, -12.8, -12.6])
+    plt.xticks(fontsize=12, labels=['13.8', '13.3', '12.8'],
+               ticks=[-13.8, -13.3, -12.8])
     plt.yticks(fontsize=12)
-    plt.xlabel('UVOT Magnitudes', fontsize=16, fontname='Times New Roman')
+    plt.xlabel('UVW2 Magnitudes', fontsize=16, fontname='Times New Roman')
+    plt.tight_layout()
     plt.savefig('figures/uv_ecdf')
     plt.clf()
 
@@ -59,6 +60,7 @@ def main():
     res = stats.probplot(-uv_band_count_rates, dist=stats.norm, plot=ax)
     ax.set_yticks(ticks=[-14.0, -13.8, -13.6, -13.4, -13.2, -13.0, -12.8, -12.6, -12.4])
     ax.set_yticklabels(labels=['14.0', '13.8', '13.6', '13.4', '13.2', '13.0', '12.8', '12.6', '12.4'])
+    plt.tight_layout()
     plt.savefig('figures/uv_prob_plot')
 
     plt.clf()
@@ -75,7 +77,7 @@ def main():
     plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
     plt.yticks([0, 0.2, 0.4], fontsize=12)
-    plt.xlabel('Swift Observed X-ray Log Count Rates', fontsize=16, fontname='Times New Roman')
+    #plt.xlabel('Swift Observed X-ray Log Count Rates', fontsize=16, fontname='Times New Roman')
     plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
     plt.tight_layout()
     plt.savefig('figures/new_xray_histogram')
@@ -87,6 +89,7 @@ def main():
     plt.yticks(fontsize=12)
     plt.plot(ecdf_xray.x, ecdf_xray.y)
     plt.xlabel('Log Count Rate', fontsize=16, fontname='Times New Roman')
+    plt.tight_layout()
     plt.savefig('figures/xray_ecdf')
     plt.clf()
 
@@ -99,6 +102,7 @@ def main():
     ax.tick_params(axis='y', labelsize=12)
     ax.title.set_visible(False)
     res = stats.probplot(xray_band_count_rates, dist=stats.norm, plot=ax)
+    plt.tight_layout()
     plt.savefig('figures/xray_prob_plot')
 
     plt.clf()
