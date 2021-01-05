@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-This code repository contains all source code for the paper.
+This code repository contains all source code for the paper given in the title, where we interpolate the gaps in the observational
+lightcurves of Mrk 335 using a Gaussian process and use these "GP Lightcurves" to perform a 
+cross-correlation analysis.
 
 UVW2            |  X-ray
 :-------------------------:|:-------------------------:
