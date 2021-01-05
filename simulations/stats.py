@@ -1,7 +1,8 @@
 # Copyright Ryan-Rhys Griffiths 2019
 # Author: Ryan-Rhys Griffiths
 """
-This script computes aggregate statistics for the lightcurve simulations.
+This script computes aggregate statistics for the lightcurve simulations. Important to note that the statistics are
+computed for standardised values.
 """
 
 import numpy as np

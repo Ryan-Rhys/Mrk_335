@@ -1,7 +1,7 @@
 # Copyright Ryan-Rhys Griffiths 2019
 # Author: Ryan-Rhys Griffiths
 """
-This script generates simulated light curves.
+This script generates simulated light curves. Timmer and Konig's algorithm generates Gaussian flux distributions.
 """
 
 import pickle
@@ -14,42 +14,43 @@ from fourier_methods import psd
 from ts_gen import ts_gen
 
 RAW_DATA_PATH = '../raw_data/mkn335_xrt_uvot_lc.dat'
-PROCESSED_DATA_PATH = 'simulation_data/'
+PROCESSED_DATA_PATH = '../processed_data/'
+exp = False  # Whether to exponentiate UV magnitudes. Should be false
 
 
 if __name__ == '__main__':
 
     # Save the gapped and full lightcurves in these files.
 
-    gapped_output_xray_dat = 'sim_curves/xray_lightcurves.dat'
-    gapped_output_uv_dat = 'sim_curves/w2_lightcurves.dat'
-    full_output_xray_dat = 'sim_curves/xray_lightcurves_no_gaps.dat'
-    full_output_uv_dat = 'sim_curves/w2_lightcurves_no_gaps.dat'
+    gapped_output_xray_dat = 'sim_curves/xray_lightcurves_new.dat'
+    full_output_xray_dat = 'sim_curves/xray_lightcurves_no_gaps_new.dat'
+
+    if exp:
+        gapped_output_uv_dat = 'sim_curves/w2_exp_lightcurves.dat'
+        full_output_uv_dat = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
+    else:
+        gapped_output_uv_dat = 'sim_curves/w2_lightcurves.dat'
+        full_output_uv_dat = 'sim_curves/w2_lightcurves_no_gaps.dat'
 
     # Read data
 
     a = ascii.read(RAW_DATA_PATH, data_start=1)
 
     t = np.array(a.columns[0])  # timings
-    xr = np.array(a.columns[1])  # x-ray band
-    wr = np.array(a.columns[15])  # w2 band
-
-    # p.plot(t, xr, '.')
-    # p.plot(t, wr, '.')
+    xr = np.array(a.columns[1])  # x-ray band count rates
+    wr = np.array(a.columns[15])  # w2 band magnitudes
 
     # Filter the flux values.
 
     goodx = np.where(xr > -1e-16)[0]
     goodw = np.where(wr > 3)[0]
 
-    xrg = xr[goodx]
+    xrg = xr[goodx]  # good x-ray count rates
     xtg = t[goodx]  # are the timings for the simulations
 
+    # save the filtered timings
     with open(PROCESSED_DATA_PATH + 'xray_simulations/x_ray_sim_times.pickle', 'wb') as handle:
         pickle.dump(xtg, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    #p.plot(xtg, xrg, '.')
-    #p.show()
 
     # X-ray PSD
 
@@ -73,13 +74,14 @@ if __name__ == '__main__':
 
     # W2 PSD
 
+    # Filter the UVW2 magnitudes
+
     wrg = wr[goodw]
     wtg = t[goodw]
 
+    # save the filtered timings
     with open(PROCESSED_DATA_PATH + '/uv_simulations/uv_sim_times.pickle', 'wb') as handle:
         pickle.dump(wtg, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    # p.plot(wtg, wrg, '.')
 
     splits = np.where(wtg[1:] - wtg[:-1] > 16)[0]+1
     tregs = np.array([])
@@ -109,14 +111,8 @@ if __name__ == '__main__':
     def linear_res(mc, freq, pow):
         return (mc[0]*freq + mc[1]) - pow
 
-
     xresult = optimize.least_squares(linear_res, [2, -3], args=(np.log(xf), np.log(xp)))
-
-    #print(xresult.x)
-
     wresult = optimize.least_squares(linear_res, [2, -3], args=(np.log(wf), np.log(wp)))
-
-    #print(wresult.x)
 
     # Plot PSDs
 
@@ -219,7 +215,12 @@ if __name__ == '__main__':
         print(i)
 
     gap_file = open(gapped_output_uv_dat, 'wb')
-    pickle.dump(wlightcurves, gap_file)
+
+    # convert to count rates if exp is True.
+    if exp:
+        pickle.dump(np.exp(wlightcurves), gap_file)
+    else:
+        pickle.dump(wlightcurves, gap_file)
     gap_file.close()
     #ascii.write(wlightcurves, output_uv_dat)
     # we use pickle because ascii can't deal with large files
