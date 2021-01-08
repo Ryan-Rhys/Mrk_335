@@ -73,6 +73,13 @@ if __name__ == '__main__':
     wrg = wr[goodw]
     wtg = t[goodw]
 
+    # Convert the UVW2 magnitudes to count rates following equation 2 of:
+    # https://swift.gsfc.nasa.gov/results/publist/Breeveld_SPIE_5898_379_2005.pdf
+
+    Z_pt = 17.77
+
+    wrg = 10**((Z_pt - wrg)/2.5)  # Range is 33 - 110 ct s^-1
+
     # save the filtered timings
     with open(PROCESSED_DATA_PATH + '/uv_simulations/uv_sim_times.pickle', 'wb') as handle:
         pickle.dump(wtg, handle, protocol=pickle.HIGHEST_PROTOCOL)

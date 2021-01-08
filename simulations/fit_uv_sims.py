@@ -50,6 +50,9 @@ if __name__ == '__main__':
     jitter = 1e-10
     ground_truth_count_rates_matrix += jitter
 
+    log_gapped_count_rates = np.log(gapped_count_rates)
+    log_ground_truth_count_rates_matrix = np.log(ground_truth_count_rates_matrix)
+
     # We do kernel selection by comparison of the negative log marginal likelihood.
 
     score_dict = {'RBF Kernel': 0, 'Matern_12 Kernel': 0, 'Matern_32 Kernel': 0, 'Matern_52_Kernel': 0,
@@ -78,8 +81,8 @@ if __name__ == '__main__':
         best_rss = 1000000000000000  # set to arbitrary large value
         best_rss_kernel = ''
 
-        gapped_rates = np.reshape(gapped_count_rates[i, :], (-1, 1))
-        ground_truth_rates = ground_truth_count_rates_matrix[i, :]
+        gapped_rates = np.reshape(log_gapped_count_rates[i, :], (-1, 1))
+        ground_truth_rates = log_ground_truth_count_rates_matrix[i, :]
 
         # Standardize the count rates
 
@@ -127,10 +130,10 @@ if __name__ == '__main__':
                 best_rss_kernel = name
                 best_rss = rss
 
-            np.savetxt('{}uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(tag, name, i), mean, fmt='%.2f')
-            np.savetxt('{}uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(tag, name, i),
+            np.savetxt('uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.2f')
+            np.savetxt('uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
                        np.array(log_lik).reshape(-1, 1), fmt='%.2f')
-            np.savetxt('{}uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(tag, name, i), np.array(rss).reshape(-1, 1),
+            np.savetxt('uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
                        fmt='%.2f')
 
             if f_plot:
@@ -139,7 +142,7 @@ if __name__ == '__main__':
 
                 plt.scatter(train_times, count_rate_scaler.inverse_transform(gapped_rates), marker='+', s=10, color='k', label='Observations')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Band Magnitudes')
+                plt.ylabel('UVW2 Log Count Rates')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/data_{}_iteration_{}.png'.format(name, i))
@@ -149,7 +152,7 @@ if __name__ == '__main__':
 
                 plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='Ground Truth Light Curve')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Band Magnitudes')
+                plt.ylabel('UVW2 Band Log Count Rates')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/ground_truth_{}_iteration_{}.png'.format(name, i))
@@ -157,7 +160,7 @@ if __name__ == '__main__':
 
                 line, = plt.plot(test_times, mean, lw=2, label='GP Fit')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Band Magnitudes')
+                plt.ylabel('UVW2 Band Log Count Rates')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/gp_fit_{}_iteration_{}.png'.format(name, i))
@@ -174,7 +177,7 @@ if __name__ == '__main__':
                 plt.ylim(13.2, 13.8)
                 ax.vlines(test_times, mean, ground_truth_rates, color='k', linewidth=0.2)
                 plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
-                plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
+                plt.ylabel('UVW2 Band Log Count Rates', fontsize=16, fontname='Times New Roman')
                 plt.legend()
                 plt.savefig('residuals_figures/uv/residual_plot_{}_iteration_{}.png'.format(name, i))
                 plt.close()
@@ -186,7 +189,7 @@ if __name__ == '__main__':
                 if name == 'Matern_12 Kernel' or name == 'Rational Quadratic Kernel':
                     samples = np.squeeze(m.predict_f_samples(test_times, 1))
                     samples = count_rate_scaler.inverse_transform(samples)
-                    np.savetxt('SF_samples/uv/{}SF_uv_samples_{}_iteration_{}.txt'.format(tag, name, i), samples, fmt='%.2f')
+                    np.savetxt('SF_samples/uv/SF_uv_samples_{}_iteration_{}.txt'.format(name, i), samples, fmt='%.2f')
 
         end_time = real_time.time()
         print(f'iteration time is {end_time - start_time}')
