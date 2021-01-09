@@ -2,20 +2,22 @@
 # Author: Ryan-Rhys Griffiths
 """
 This script computes aggregate statistics for the lightcurve simulations. Important to note that the statistics are
-computed for standardised values.
+computed for standardised values for LML and in real space for average squared residuals
 """
 
 import numpy as np
 
 NSIMS = 1000
-XRAY = False  # Toggles whether to compute statistics for x-ray or uv simulations
+XRAY = True  # Toggles whether to compute statistics for x-ray or uv simulations
 
 if __name__ == "__main__":
 
     if XRAY:
         directory = 'xray_sims_stand'
+        tag = 'xray'
     else:
         directory = 'uv_sims_stand'
+        tag = 'uv'
 
     matern12_log_lik_list = []
     matern32_log_lik_list = []
@@ -83,4 +85,34 @@ if __name__ == "__main__":
     rbf_std_ll = np.std(rbf_log_lik_list)
     rbf_std_rss = np.std(rbf_rss_list)
 
-    print('hi')
+    with open(f'simulation_stats/{tag}_simulation_stats.txt', 'w') as f:
+
+        f.write(f'Matern 1/2 average LML is {matern12_av_ll}')
+        f.write(f'\nMatern 1/2 average LML Error is {matern12_std_ll}')
+
+        f.write(f'\nMatern 1/2 average RSS is {matern12_av_rss}')
+        f.write(f'\nMatern 1/2 average RSS Error is {matern12_std_rss}')
+
+        f.write(f'\nMatern 3/2 average LML is {matern32_av_ll}')
+        f.write(f'\nMatern 3/2 average LML Error is {matern32_std_ll}')
+
+        f.write(f'\nMatern 3/2 average RSS is {matern32_av_rss}')
+        f.write(f'\nMatern 3/2 average RSS Error is {matern32_std_rss}')
+
+        f.write(f'\nMatern 5/2 average LML is {matern52_av_ll}')
+        f.write(f'\nMatern 5/2 average LML Error is {matern52_std_ll}')
+
+        f.write(f'\nMatern 5/2 average RSS is {matern52_av_rss}')
+        f.write(f'\nMatern 5/2 average RSS Error is {matern52_std_rss}')
+
+        f.write(f'\nRQ average LML is {rq_av_ll}')
+        f.write(f'\nRQ average LML Error is {rq_std_ll}')
+
+        f.write(f'\nRQ average RSS is {rq_av_rss}')
+        f.write(f'\nRQ average RSS Error is {rq_std_rss}')
+
+        f.write(f'\nRBF average LML is {rbf_av_ll}')
+        f.write(f'\nRBF average LML Error is {rbf_std_ll}')
+
+        f.write(f'\nRBF average RSS is {rbf_av_rss}')
+        f.write(f'\nRBF average RSS Error is {rbf_std_rss}')

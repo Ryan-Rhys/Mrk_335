@@ -20,7 +20,7 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
-generate_samples = True  # Whether to generate samples to be used in structure function computation.
+generate_samples = False  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
 f_plot = False
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
             nlpd = -m.predict_log_density((tf.reshape(tf.cast(test_times, dtype=tf.float64), (-1, 1)),
                                             tf.reshape(tf.cast(y_labels, dtype=tf.float64), (-1, 1))))
 
-            # Measure residual sum of squares (RSS) in real space
+            # Measure residual sum of squares (RSS) in real space and take average squared residual
 
             avg_test_nlpd = (nlpd/len(y_labels)).numpy()[0]
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
             rss = rss_func(np.squeeze(mean), ground_truth_rates)/num_points
 
-            # Measure the log marginal likelihood (NLML) in standardised space
+            # Measure the log marginal likelihood (LML) in standardised space. Note this computes LML and not NLML
 
             log_lik = m.log_marginal_likelihood()
 

@@ -20,13 +20,20 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
-generate_samples = True  # Whether to generate samples to be used in structure function computation.
+generate_samples = False  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
 f_plot = False  # Whether to plot the simulated lightcurves.
 
+empirical_correction = False
+
+if empirical_correction:
+    tag = 'empirical_correction'
+else:
+    tag = ''
+
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
-GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
-GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
+GAPPED_FILE = f'sim_curves/{tag}w2_lightcurves.dat'
+GROUND_TRUTH_FILE = f'sim_curves/{tag}w2_lightcurves_no_gaps.dat'
 
 
 def objective_closure():
@@ -125,7 +132,7 @@ if __name__ == '__main__':
 
             avg_test_nlpd = (nlpd/len(y_labels)).numpy()[0]
 
-            # Measure residual sum of squares (RSS) in real space
+            # Measure residual sum of squares (RSS) in real space and take average squared residual
 
             mean, _ = m.predict_y(test_times)
             mean = count_rate_scaler.inverse_transform(mean)
@@ -135,7 +142,7 @@ if __name__ == '__main__':
 
             # Measure the log marginal likelihood (NLML) in standardised space
 
-            log_lik = m.log_marginal_likelihood()  # metric is intrinsic to the fit.
+            log_lik = m.log_marginal_likelihood()  # metric is intrinsic to the fit. Note this measure LML and not NLML
 
 
             if log_lik > best_log_lik:
@@ -150,12 +157,12 @@ if __name__ == '__main__':
                 best_nlpd_kernel = name
                 best_nlpd = avg_test_nlpd
 
-            np.savetxt('uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.2f')
-            np.savetxt('uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
+            np.savetxt('uv_sims_stand/mean/{}mean_{}_iteration_{}.txt'.format(tag, name, i), mean, fmt='%.2f')
+            np.savetxt('uv_sims_stand/log_lik/{}log_lik_{}_iteration_{}.txt'.format(tag, name, i),
                        np.array(log_lik).reshape(-1, 1), fmt='%.5f')
-            np.savetxt('uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
+            np.savetxt('uv_sims_stand/rss/{}rss_{}_iteration_{}.txt'.format(tag, name, i), np.array(rss).reshape(-1, 1),
                        fmt='%.5f')
-            np.savetxt('uv_sims_stand/nlpd/nlpd_{}_iteration_{}.txt'.format(name, i), np.array(avg_test_nlpd).reshape(-1, 1),
+            np.savetxt('uv_sims_stand/nlpd/{}nlpd_{}_iteration_{}.txt'.format(tag, name, i), np.array(avg_test_nlpd).reshape(-1, 1),
                        fmt='%.15f')
 
             if f_plot:
