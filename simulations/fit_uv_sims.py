@@ -61,6 +61,9 @@ if __name__ == '__main__':
     rss_dict = {'RBF Kernel': 0, 'Matern_12 Kernel': 0, 'Matern_32 Kernel': 0, 'Matern_52_Kernel': 0,
                 'Rational Quadratic Kernel': 0}
 
+    nlpd_dict = {'RBF Kernel': 0, 'Matern_12 Kernel': 0, 'Matern_32 Kernel': 0, 'Matern_52_Kernel': 0,
+                'Rational Quadratic Kernel': 0}
+
     for i in range(start_sim_number, n_sims):
         tf.random.set_seed(i)
         start_time = real_time.time()
@@ -80,6 +83,8 @@ if __name__ == '__main__':
         best_kernel = ''
         best_rss = 1000000000000000  # set to arbitrary large value
         best_rss_kernel = ''
+        best_nlpd = 100000000000000  # set to arbitrary large value
+        best_nlpd_kernel = ''
 
         gapped_rates = np.reshape(log_gapped_count_rates[i, :], (-1, 1))
         ground_truth_rates = log_ground_truth_count_rates_matrix[i, :]
@@ -112,15 +117,26 @@ if __name__ == '__main__':
             except Exception:
                 continue
 
+            # Measure negative log predictive density (NLPD) in standardised space
+
+            y_labels = count_rate_scaler.transform(tf.reshape(ground_truth_rates, (-1, 1)))
+            nlpd = -m.predict_log_density((tf.reshape(tf.cast(test_times, dtype=tf.float64), (-1, 1)),
+                                            tf.reshape(tf.cast(y_labels, dtype=tf.float64), (-1, 1))))
+
+            avg_test_nlpd = (nlpd/len(y_labels)).numpy()[0]
+
+            # Measure residual sum of squares (RSS) in real space
+
             mean, _ = m.predict_y(test_times)
             mean = count_rate_scaler.inverse_transform(mean)
             num_points = len(mean)  # number of points where GP prediction and ground truth are compared.
 
             rss = rss_func(np.squeeze(mean), ground_truth_rates)/num_points
+
+            # Measure the log marginal likelihood (NLML) in standardised space
+
             log_lik = m.log_marginal_likelihood()  # metric is intrinsic to the fit.
 
-            # lower = mean[:, 0] - 2 * np.sqrt(var[:, 0])  # 1 standard deviation is common in astrophysics
-            # upper = mean[:, 0] + 2 * np.sqrt(var[:, 0])
 
             if log_lik > best_log_lik:
                 best_kernel = name
@@ -130,11 +146,17 @@ if __name__ == '__main__':
                 best_rss_kernel = name
                 best_rss = rss
 
+            if avg_test_nlpd < best_nlpd:
+                best_nlpd_kernel = name
+                best_nlpd = avg_test_nlpd
+
             np.savetxt('uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.2f')
             np.savetxt('uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
-                       np.array(log_lik).reshape(-1, 1), fmt='%.2f')
+                       np.array(log_lik).reshape(-1, 1), fmt='%.5f')
             np.savetxt('uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
-                       fmt='%.2f')
+                       fmt='%.5f')
+            np.savetxt('uv_sims_stand/nlpd/nlpd_{}_iteration_{}.txt'.format(name, i), np.array(avg_test_nlpd).reshape(-1, 1),
+                       fmt='%.15f')
 
             if f_plot:
 
@@ -199,9 +221,13 @@ if __name__ == '__main__':
         print('best rss kernel is: ' + best_rss_kernel)
         rss_dict[best_rss_kernel] += 1
         print('best rss is: ' + str(best_rss))
+        print('best nlpd kernel is ' + best_nlpd_kernel)
+        nlpd_dict[best_nlpd_kernel] += 1
+        print('best nlpd is: ' + str(best_nlpd))
 
         print(str(score_dict))
         print(str(rss_dict))
+        print(str(nlpd_dict))
 
         file = open('uv_sims_stand/log_lik_scores/log_lik_scores.txt', "w")
         file.write(str(score_dict))
@@ -209,4 +235,8 @@ if __name__ == '__main__':
 
         file = open('uv_sims_stand/rss_scores/rss_scores.txt', "w")
         file.write(str(rss_dict))
+        file.close()
+
+        file = open('uv_sims_stand/nlpd_scores/nlpd_scores.txt', "w")
+        file.write(str(nlpd_dict))
         file.close()

@@ -18,6 +18,7 @@ conda create -n mrk python==3.7
 conda install astropy scikit-learn matplotlib
 conda install -c conda-forge statsmodels
 pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
+pip install scipy
 ```
 
 ## Gaussian Process Fitting to Observational Data
