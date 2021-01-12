@@ -14,18 +14,11 @@ from structure_function_utils import compute_gp_structure_function
 resolution = 5.3
 nsims = 1000  # number of simulated curves i.e length of gapped_file
 kernel = 'Matern'  # ['Matern', 'RQ']
-exp = False  # Whether to take exponentiated values or not. Should be false.
 
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
 
-if exp:
-    GAPPED_FILE = 'sim_curves/w2_exp_lightcurves.dat'
-    GROUND_TRUTH_FILE = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
-    exptag = 'exp_'
-else:
-    GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
-    GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
-    exptag = ''
+GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
+GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
 
 if __name__ == '__main__':
 
@@ -44,7 +37,7 @@ if __name__ == '__main__':
     for i in range(15):
 
         # file handle for GP lightcurve
-        handle = f'{exptag}SF_uv_samples_{tag} Kernel_iteration_{i}.txt'
+        handle = f'SF_uv_samples_{tag} Kernel_iteration_{i}.txt'
 
         gapped_count_rates = np.reshape(gapped_count_rates_matrix[i, :], (-1, 1))
         count_rates = np.reshape(ground_truth_count_rates_matrix[i, :], (-1, 1))
@@ -54,12 +47,12 @@ if __name__ == '__main__':
         ground_truth_tao_plot, ground_truth_structure_function_vals = compute_gp_structure_function(count_rates, test_times, resolution=resolution)
         gp_tao_plot, gp_structure_function_vals = compute_gp_structure_function(gp_count_rates, test_times, resolution=resolution)
 
-        np.savetxt(f'saved_sf_values/uv/{exptag}gapped_tao_plot_{i}.txt', gapped_tao_plot, fmt='%.2f')
-        np.savetxt(f'saved_sf_values/uv/{exptag}gapped_structure_function_vals_{i}.txt', gapped_structure_function_vals, fmt='%.2f')
-        np.savetxt(f'saved_sf_values/uv/{exptag}{kernel}_gp_tao_plot_{i}.txt', gp_tao_plot, fmt='%.2f')
-        np.savetxt(f'saved_sf_values/uv/{exptag}ground_truth_structure_function_vals_{i}.txt', ground_truth_structure_function_vals, fmt='%.2f')
-        np.savetxt(f'saved_sf_values/uv/{exptag}ground_truth_tao_plot_{i}.txt', ground_truth_tao_plot, fmt='%.2f')
-        np.savetxt(f'saved_sf_values/uv/{exptag}{kernel}_gp_structure_function_vals_{i}.txt', gp_structure_function_vals, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/gapped_tao_plot_{i}.txt', gapped_tao_plot, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/gapped_structure_function_vals_{i}.txt', gapped_structure_function_vals, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/{kernel}_gp_tao_plot_{i}.txt', gp_tao_plot, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/ground_truth_structure_function_vals_{i}.txt', ground_truth_structure_function_vals, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/ground_truth_tao_plot_{i}.txt', ground_truth_tao_plot, fmt='%.2f')
+        np.savetxt(f'saved_sf_values/uv/{kernel}_gp_structure_function_vals_{i}.txt', gp_structure_function_vals, fmt='%.2f')
 
         fig, ax = plt.subplots(1)
         plt.scatter(gapped_tao_plot, gapped_structure_function_vals, s=10, marker='+', label='Gapped')
@@ -72,7 +65,7 @@ if __name__ == '__main__':
         plt.title('UVW2 Gapped Structure Function')
         plt.tight_layout()
         plt.legend()
-        plt.savefig(f'SF_sims_figures/uv/{exptag}gapped_structure_function_{i}')
+        plt.savefig(f'SF_sims_figures/uv/gapped_structure_function_{i}')
         plt.close()
 
         fig, ax = plt.subplots(1)
@@ -86,5 +79,5 @@ if __name__ == '__main__':
         plt.title(f'UVW2 GP {kernel} Structure Function')
         plt.tight_layout()
         plt.legend()
-        plt.savefig(f'SF_sims_figures/uv/{exptag}gp_{kernel}_structure_function_{i}')
+        plt.savefig(f'SF_sims_figures/uv/gp_{kernel}_structure_function_{i}')
         plt.close()
