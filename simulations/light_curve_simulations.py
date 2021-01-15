@@ -5,8 +5,8 @@ This script generates simulated light curves. Timmer and Konig's algorithm gener
 
 import pickle
 
-from astropy.io import ascii
 import numpy as np
+from astropy.io import ascii
 from matplotlib import pyplot as p
 
 from fourier_methods import psd
@@ -14,22 +14,24 @@ from ts_gen import ts_gen
 
 RAW_DATA_PATH = '../raw_data/mkn335_xrt_uvot_lc.dat'
 PROCESSED_DATA_PATH = '../processed_data/'
-exp = False  # Whether to exponentiate UV magnitudes. Should be false
+
+empirical_correction = False
 
 
 if __name__ == '__main__':
+
+    if empirical_correction:
+        tag = 'empirical_correction_'
+    else:
+        tag = ''
 
     # Save the gapped and full lightcurves in these files.
 
     gapped_output_xray_dat = 'sim_curves/xray_lightcurves_new.dat'
     full_output_xray_dat = 'sim_curves/xray_lightcurves_no_gaps_new.dat'
 
-    if exp:
-        gapped_output_uv_dat = 'sim_curves/w2_exp_lightcurves.dat'
-        full_output_uv_dat = 'sim_curves/w2_exp_lightcurves_no_gaps.dat'
-    else:
-        gapped_output_uv_dat = 'sim_curves/w2_lightcurves.dat'
-        full_output_uv_dat = 'sim_curves/w2_lightcurves_no_gaps.dat'
+    gapped_output_uv_dat = f'sim_curves/{tag}w2_lightcurves.dat'
+    full_output_uv_dat = f'sim_curves/{tag}w2_lightcurves_no_gaps.dat'
 
     # Read data
 
@@ -69,7 +71,7 @@ if __name__ == '__main__':
             #p.plot(treg, xreg, 'k')
             prev_split = split
 
-    xf, xp, xe = psd(tregs, xregs)
+    xf, xp, xe = psd(tregs, np.log(xregs))  # calculate psd in log space
 
     # W2 PSD
 
@@ -77,6 +79,27 @@ if __name__ == '__main__':
 
     wrg = wr[goodw]
     wtg = t[goodw]
+
+    # Convert the UVW2 magnitudes to count rates following equation 2 of:
+    # https://swift.gsfc.nasa.gov/results/publist/Breeveld_SPIE_5898_379_2005.pdf
+
+    Z_pt = 17.77
+
+    wrg = 10**((Z_pt - wrg)/2.5)  # Range is 33 - 110 ct s^-1
+
+    if empirical_correction:
+
+        # Equations 3,4 and 5 of this document: https://swift.gsfc.nasa.gov/results/publist/Breeveld_SPIE_5898_379_2005.pdf
+
+        ft = 0.011088
+        df = 0.0155844
+
+        c_theory = -np.log(1 - wrg*ft)/(ft*(1 - df))
+
+        x_var = wrg*ft
+        f_of_x = 1.0 + 0.2966*x_var - 0.492*x_var**2 - 0.4183*x_var**3 + 0.2668*x_var**4
+
+        wrg = c_theory*f_of_x
 
     # save the filtered timings
     with open(PROCESSED_DATA_PATH + '/uv_simulations/uv_sim_times.pickle', 'wb') as handle:
@@ -215,11 +238,7 @@ if __name__ == '__main__':
 
     gap_file = open(gapped_output_uv_dat, 'wb')
 
-    # convert to count rates if exp is True.
-    if exp:
-        pickle.dump(np.exp(wlightcurves), gap_file)
-    else:
-        pickle.dump(wlightcurves, gap_file)
+    pickle.dump(wlightcurves, gap_file)
     gap_file.close()
     #ascii.write(wlightcurves, output_uv_dat)
     # we use pickle because ascii can't deal with large files

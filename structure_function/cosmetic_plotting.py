@@ -4,12 +4,12 @@
 Script for re-plotting saved data as well as generating overlay plots with the observational structure functions.
 """
 
-import matplotlib
 from matplotlib import pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 
 n_samples = 50  # number of samples to plot the figures for.
-kernel = 'Matern'  # ['Matern' 'RQ'] are the options
+kernel = 'RQ'  # ['Matern' 'RQ'] are the options
 
 if __name__ == '__main__':
 
@@ -102,25 +102,37 @@ if __name__ == '__main__':
     # plot on the same axis
 
     fig, ax = plt.subplots(1)
+    plt.xlabel(r'$\tau$' + '(days)', fontsize=12)
     color = 'tab:blue'
+    ax.set_ylabel('Observational SF', fontsize=12, color=color)
     ax.errorbar(x_ray_tao_plot, x_ray_mean_structure_function, yerr=x_ray_std_structure_function, fmt='o', markersize=3, linewidth=0.5, color=color, label='Observational')
-    color = 'tab:red'
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.tick_params(axis='y', labelcolor=color)
+    ax.set_ylim([0.5, 3.5])
+    ax.yaxis.set_minor_formatter(mticker.ScalarFormatter())
+    # ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    # ax.set_yticks([0.6, 1, 2, 3, 4])
+    plt.xticks([0.1, 1])
+    ax.minorticks_off()
     if kernel == 'Matern':
-        scale_factor = 0.90
+        scale_factor = 0.9
     else:
         scale_factor = 1.35
+    color = 'tab:red'
+    ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
+    ax2.set_ylabel('Gaussian Process SF', color=color, fontsize=12)  # we already handled the x-label with ax1
     ax.errorbar(x_ray_gp_tao_plot, scale_factor*x_ray_gp_mean_structure_function, yerr=x_ray_gp_std_structure_function, fmt='x', color=color, markersize=3, linewidth=0.5, label='GP')
-    plt.xscale('log')
-    ax.set_yscale('log')
-    plt.xlabel(r'$\tau$' + '(days)', fontsize=12)
-    ax.set_ylabel('SF', fontsize=12)
-    plt.ylim(0.5, 5)
-    plt.yticks([0.6, 1, 2, 3, 4])
-    ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    #ax.get_yaxis().set_tick_params(which='minor', size=0)
-    #ax.get_yaxis().set_tick_params(which='minor', width=0)
-    plt.xlim([10, 600])
+    ax2.set_yscale('log')
+    ax2.set_xscale('log')
+    ax2.yaxis.set_minor_formatter(mticker.ScalarFormatter())
+    # ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax2.tick_params(axis='y', labelcolor=color)
+    ax2.set_ylim([0.5, 3.5])
+    # ax2.set_yticks([1])
+    plt.xlim([10, 700])
     plt.tight_layout()
-    fig.legend(loc=4, bbox_to_anchor=[0.25, 0.75, 0.15, 0])
+    fig.legend(loc=4, bbox_to_anchor=[0.275, 0.75, 0.15, 0])
+    ax2.minorticks_off()
     plt.savefig(f'cosmetic_figures/gp_structure_function_xray_{tag}_on_same_axis_{int(scale_factor*100)}')
     plt.close()
