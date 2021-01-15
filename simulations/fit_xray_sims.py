@@ -8,12 +8,12 @@ import logging
 import time as real_time  # avoid aliasing with time variable in code.
 
 import gpflow
+import numpy as np
+import tensorflow as tf
 from gpflow.mean_functions import Constant
 from gpflow.utilities import set_trainable
-import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
 
 from simulation_utils import load_sim_data, rss_func
 

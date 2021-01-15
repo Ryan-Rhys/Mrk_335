@@ -5,8 +5,8 @@ This script generates simulated light curves. Timmer and Konig's algorithm gener
 
 import pickle
 
-from astropy.io import ascii
 import numpy as np
+from astropy.io import ascii
 from matplotlib import pyplot as p
 
 from fourier_methods import psd
