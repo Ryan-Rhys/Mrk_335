@@ -8,7 +8,7 @@ computed for standardised values for LML and in real space for average squared r
 import numpy as np
 
 NSIMS = 1000
-XRAY = True  # Toggles whether to compute statistics for x-ray or uv simulations
+XRAY = False  # Toggles whether to compute statistics for x-ray or uv simulations
 
 if __name__ == "__main__":
 
