@@ -1,7 +1,7 @@
 # Copyright Ryan-Rhys Griffiths 2019
 # Author: Ryan-Rhys Griffiths
 """
-This script fits a Gaussian Process to uv simulations.
+This script fits a Gaussian Process to uv simulations in units of flux as of 15th February 2021.
 """
 
 import logging
@@ -20,20 +20,13 @@ from simulation_utils import load_sim_data, rss_func
 logging.getLogger('tensorflow').disabled = True
 gpflow.config.set_default_float(np.float64)
 fix_noise = True
-generate_samples = False  # Whether to generate samples to be used in structure function computation.
+generate_samples = True  # Whether to generate samples to be used in structure function computation.
 start_sim_number = 0  # Simulation number to start-up - workaround for computation time growth per iteration in large loop
-f_plot = False  # Whether to plot the simulated lightcurves.
-
-empirical_correction = False
-
-if empirical_correction:
-    tag = 'empirical_correction'
-else:
-    tag = ''
+f_plot = True  # Whether to plot the simulated lightcurves.
 
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
-GAPPED_FILE = f'sim_curves/{tag}w2_lightcurves.dat'
-GROUND_TRUTH_FILE = f'sim_curves/{tag}w2_lightcurves_no_gaps.dat'
+GAPPED_FILE = f'sim_curves/w2_lightcurves.dat'
+GROUND_TRUTH_FILE = f'sim_curves/w2_lightcurves_no_gaps.dat'
 
 
 def objective_closure():
@@ -47,18 +40,12 @@ if __name__ == '__main__':
 
     tf.random.set_seed(42)
 
-    train_times, test_times, gapped_count_rates, ground_truth_count_rates_matrix = load_sim_data(TIMINGS_FILE,
-                                                                                                 GAPPED_FILE,
-                                                                                                 GROUND_TRUTH_FILE)
-    n_sims = gapped_count_rates.shape[0]
+    # Units of flux as of 15th February 2021
 
-    # Add jitter ot the count rates to avoid numerical issues.
-
-    jitter = 1e-10
-    ground_truth_count_rates_matrix += jitter
-
-    log_gapped_count_rates = np.log(gapped_count_rates)
-    log_ground_truth_count_rates_matrix = np.log(ground_truth_count_rates_matrix)
+    train_times, test_times, gapped_flux, ground_truth_flux_matrix = load_sim_data(TIMINGS_FILE,
+                                                                                   GAPPED_FILE,
+                                                                                   GROUND_TRUTH_FILE)
+    n_sims = gapped_flux.shape[0]
 
     # We do kernel selection by comparison of the negative log marginal likelihood.
 
@@ -93,13 +80,13 @@ if __name__ == '__main__':
         best_nlpd = 100000000000000  # set to arbitrary large value
         best_nlpd_kernel = ''
 
-        gapped_rates = np.reshape(log_gapped_count_rates[i, :], (-1, 1))
-        ground_truth_rates = log_ground_truth_count_rates_matrix[i, :]
+        gapped_rates = np.reshape(gapped_flux[i, :], (-1, 1))
+        ground_truth_rates = ground_truth_flux_matrix[i, :]
 
         # Standardize the count rates
 
-        count_rate_scaler = StandardScaler()
-        gapped_rates = count_rate_scaler.fit_transform(gapped_rates)
+        flux_scaler = StandardScaler()
+        gapped_rates = flux_scaler.fit_transform(gapped_rates)
 
         for k in kernel_list:
 
@@ -126,16 +113,16 @@ if __name__ == '__main__':
 
             # Measure negative log predictive density (NLPD) in standardised space
 
-            y_labels = count_rate_scaler.transform(tf.reshape(ground_truth_rates, (-1, 1)))
+            y_labels = flux_scaler.transform(tf.reshape(ground_truth_rates, (-1, 1)))
             nlpd = -m.predict_log_density((tf.reshape(tf.cast(test_times, dtype=tf.float64), (-1, 1)),
                                             tf.reshape(tf.cast(y_labels, dtype=tf.float64), (-1, 1))))
 
             avg_test_nlpd = (nlpd/len(y_labels)).numpy()[0]
 
-            # Measure residual sum of squares (RSS) in real space and take average squared residual
+            # Measure residual sum of squares (RSS) in standardised space and take average squared residual
 
             mean, _ = m.predict_y(test_times)
-            mean = count_rate_scaler.inverse_transform(mean)
+            mean = flux_scaler.inverse_transform(mean)
             num_points = len(mean)  # number of points where GP prediction and ground truth are compared.
 
             rss = rss_func(np.squeeze(mean), ground_truth_rates)/num_points
@@ -143,7 +130,6 @@ if __name__ == '__main__':
             # Measure the log marginal likelihood (NLML) in standardised space
 
             log_lik = m.log_marginal_likelihood()  # metric is intrinsic to the fit. Note this measure LML and not NLML
-
 
             if log_lik > best_log_lik:
                 best_kernel = name
@@ -157,21 +143,21 @@ if __name__ == '__main__':
                 best_nlpd_kernel = name
                 best_nlpd = avg_test_nlpd
 
-            np.savetxt('uv_sims_stand/mean/{}mean_{}_iteration_{}.txt'.format(tag, name, i), mean, fmt='%.2f')
-            np.savetxt('uv_sims_stand/log_lik/{}log_lik_{}_iteration_{}.txt'.format(tag, name, i),
-                       np.array(log_lik).reshape(-1, 1), fmt='%.5f')
-            np.savetxt('uv_sims_stand/rss/{}rss_{}_iteration_{}.txt'.format(tag, name, i), np.array(rss).reshape(-1, 1),
-                       fmt='%.5f')
-            np.savetxt('uv_sims_stand/nlpd/{}nlpd_{}_iteration_{}.txt'.format(tag, name, i), np.array(avg_test_nlpd).reshape(-1, 1),
-                       fmt='%.15f')
+            np.savetxt('uv_sims_stand/mean/mean_{}_iteration_{}.txt'.format(name, i), mean, fmt='%.50f')
+            np.savetxt('uv_sims_stand/log_lik/log_lik_{}_iteration_{}.txt'.format(name, i),
+                       np.array(log_lik).reshape(-1, 1), fmt='%.50f')
+            np.savetxt('uv_sims_stand/rss/rss_{}_iteration_{}.txt'.format(name, i), np.array(rss).reshape(-1, 1),
+                       fmt='%.50f')
+            np.savetxt('uv_sims_stand/nlpd/nlpd_{}_iteration_{}.txt'.format(name, i), np.array(avg_test_nlpd).reshape(-1, 1),
+                       fmt='%.50f')
 
             if f_plot:
 
                 # Plot the gapped data points observed by GP
 
-                plt.scatter(train_times, count_rate_scaler.inverse_transform(gapped_rates), marker='+', s=10, color='k', label='Observations')
+                plt.scatter(train_times, flux_scaler.inverse_transform(gapped_rates), marker='+', s=10, color='k', label='Observations')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Log Count Rates')
+                plt.ylabel('UVW2 Band Flux')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/data_{}_iteration_{}.png'.format(name, i))
@@ -181,7 +167,7 @@ if __name__ == '__main__':
 
                 plt.plot(test_times, ground_truth_rates, lw=1, alpha=0.2, label='Ground Truth Light Curve')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Band Log Count Rates')
+                plt.ylabel('UVW2 Band Flux')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/ground_truth_{}_iteration_{}.png'.format(name, i))
@@ -189,7 +175,7 @@ if __name__ == '__main__':
 
                 line, = plt.plot(test_times, mean, lw=2, label='GP Fit')
                 plt.xlabel('Time (days)')
-                plt.ylabel('UVW2 Band Log Count Rates')
+                plt.ylabel('UVW2 Band Flux')
                 plt.legend(loc=3)
                 plt.tight_layout()
                 plt.savefig('residuals_figures/uv/gp_fit_{}_iteration_{}.png'.format(name, i))
@@ -200,13 +186,15 @@ if __name__ == '__main__':
                 plt.scatter(test_times, ground_truth_rates, marker='o', s=3, color='k', label='Ground Truth Light Curve')
                 # Residual plot
                 difference = np.squeeze(mean) - ground_truth_rates
-                plt.yticks([13.3, 13.7])
+                #plt.yticks([13.3, 13.7])  # old plotting code for magnitude units
+                plt.yticks([60, 70, 80])
                 plt.xticks([55500, 55525, 55550])
                 plt.xlim(55500, 55550)
-                plt.ylim(13.2, 13.8)
+                #plt.ylim(13.2, 13.8)  # old plotting code for magnitude units
+                plt.ylim(60, 80)
                 ax.vlines(test_times, mean, ground_truth_rates, color='k', linewidth=0.2)
                 plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
-                plt.ylabel('UVW2 Band Log Count Rates', fontsize=16, fontname='Times New Roman')
+                plt.ylabel('UVW2 Band Flux', fontsize=16, fontname='Times New Roman')
                 plt.legend()
                 plt.savefig('residuals_figures/uv/residual_plot_{}_iteration_{}.png'.format(name, i))
                 plt.close()
@@ -217,8 +205,8 @@ if __name__ == '__main__':
 
                 if name == 'Matern_12 Kernel' or name == 'Rational Quadratic Kernel':
                     samples = np.squeeze(m.predict_f_samples(test_times, 1))
-                    samples = count_rate_scaler.inverse_transform(samples)
-                    np.savetxt('SF_samples/uv/SF_uv_samples_{}_iteration_{}.txt'.format(name, i), samples, fmt='%.2f')
+                    samples = flux_scaler.inverse_transform(samples)
+                    np.savetxt('SF_samples/uv/SF_uv_samples_{}_iteration_{}.txt'.format(name, i), samples, fmt='%.25f')
 
         end_time = real_time.time()
         print(f'iteration time is {end_time - start_time}')

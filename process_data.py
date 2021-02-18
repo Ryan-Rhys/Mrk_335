@@ -160,13 +160,13 @@ if __name__ == '__main__':
         pickle.dump(x_ray_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
     with open('processed_data/xray/x_ray_band_count_errors.pickle', 'wb') as handle:
         pickle.dump(x_ray_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_cr_times.pickle', 'wb') as handle:
+    with open('processed_data/uv/uv_fl_times.pickle', 'wb') as handle:
         pickle.dump(uv_cr_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
     with open('processed_data/uv/uv_mag_times.pickle', 'wb') as handle:
         pickle.dump(uv_mag_times, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_band_count_rates.pickle', 'wb') as handle:
+    with open('processed_data/uv/uv_band_flux.pickle', 'wb') as handle:
         pickle.dump(uv_band_count_rates, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('processed_data/uv/uv_band_count_errors.pickle', 'wb') as handle:
+    with open('processed_data/uv/uv_band_flux_errors.pickle', 'wb') as handle:
         pickle.dump(uv_band_count_errors, handle, protocol=pickle.HIGHEST_PROTOCOL)
     with open('processed_data/uv/uv_band_magnitudes.pickle', 'wb') as handle:
         pickle.dump(uv_band_magnitudes, handle, protocol=pickle.HIGHEST_PROTOCOL)

@@ -17,8 +17,9 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 
 fix_noise = True
-generate_samples = False  # Whether to generate samples from the best-fit kernels.
-plot_mean = True  # Whether to plot the GP mean or the samples (True = mean, False = sample)
+generate_samples = True  # Whether to generate samples from the best-fit kernels.
+plot_mean = False  # Whether to plot the GP mean or the samples (True = mean, False = sample)
+n_samples = 1000  # Number of samples to take
 
 m = None
 
@@ -40,6 +41,8 @@ if __name__ == '__main__':
         x_ray_band_count_rates = pickle.load(handle).reshape(-1, 1)
     with open('../processed_data/xray/x_ray_band_count_errors.pickle', 'rb') as handle:
         x_ray_band_count_errors = pickle.load(handle).reshape(-1, 1)
+
+    snr = np.mean(x_ray_band_count_rates)/np.mean(x_ray_band_count_errors)  # signal to noise ratio is ca. 16 so we ignore measurement noise.
 
     # x-ray count rates are log-Gaussian distributed and so we apply the log transform to the values.
 
@@ -77,8 +80,9 @@ if __name__ == '__main__':
 
             # Fix a noise level to be a jitter of 1e-4 because the log transform means we lose access to the
             # empirical values.
+            # The SNR is ca. 16 in the original data so it's possible to impose this in the standardised data as well.
 
-            fixed_noise = np.float64(0.0001)
+            fixed_noise = np.mean(np.abs(counts/snr))  # 0.05, current val, fixed_noise = np.float64(0.0001) previously
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
             m.likelihood.variance = fixed_noise
 
@@ -100,13 +104,13 @@ if __name__ == '__main__':
 
             if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
 
-                samples = tf.squeeze(m.predict_f_samples(time_test, 10000))
+                samples = tf.squeeze(m.predict_f_samples(time_test, n_samples))
                 samples = count_scaler.inverse_transform(samples)
-                np.savetxt('samples/xray/xray_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
+                np.savetxt('samples/xray/xray_samples_{}_noise_{}_n_samples_{}.txt'.format(name, fixed_noise, n_samples), samples, fmt='%.50f')
 
-        np.savetxt('experiment_params/xray/real_mean_and_{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), mean, fmt='%.2f')
-        np.savetxt('experiment_params/xray/real_error_upper_and{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), upper, fmt='%.2f')
-        np.savetxt('experiment_params/xray/real_error_lower_and{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), lower, fmt='%.2f')
+        np.savetxt('experiment_params/xray/real_mean_and_{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), mean, fmt='%.50f')
+        np.savetxt('experiment_params/xray/real_error_upper_and{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), upper, fmt='%.50f')
+        np.savetxt('experiment_params/xray/real_error_lower_and{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), lower, fmt='%.50f')
         file = open('experiment_params/xray/trainables_and{}_and_{}_fixed_noise.txt'.format(name, fixed_noise), "w")
         file.write('log likelihood of model is :' + str(log_lik))
         file.close()

@@ -14,38 +14,53 @@ from scipy import stats
 from scipy.stats import gaussian_kde
 from statsmodels.distributions.empirical_distribution import ECDF
 
+f_mag = False  # If true, plot UVW2 in magnitudes instead of flux
+
 
 def main():
     """
     Generate histograms, ECDFs and PP plots.
     """
 
-    with open('../processed_data/uv/uv_band_count_rates.pickle', 'rb') as handle:
-        uv_band_count_rates = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
+    if f_mag:
+        with open('../processed_data/uv/uv_band_magnitudes.pickle', 'rb') as handle:
+            uv_band = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
+    else:
+        with open('../processed_data/uv/uv_band_flux.pickle', 'rb') as handle:
+            uv_band = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
 
     # plot the histogram
-    plt.hist(uv_band_count_rates, bins=20, color="#00b764", alpha=0.5, density=True)
-    density = gaussian_kde(uv_band_count_rates)
-    xs = np.linspace(np.min(uv_band_count_rates), np.max(uv_band_count_rates), 200)
+    plt.hist(uv_band, bins=20, color="#00b764", alpha=0.5, density=True)
+    density = gaussian_kde(uv_band)
+    xs = np.linspace(np.min(uv_band), np.max(uv_band), 200)
     plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
-    plt.yticks([0, 1, 2], fontsize=12)
-    #plt.xlabel('Swift Observed UVOT Magnitudes', fontsize=16, fontname='Times New Roman')
+    if f_mag:
+        plt.yticks([0, 1, 2], fontsize=12)
     plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
-    plt.gca().invert_xaxis()
+    if f_mag:
+        plt.gca().invert_xaxis()
     plt.tight_layout()
-    plt.savefig('figures/new_uv_histogram.png')
+    plt.savefig(f'figures/new_uv_histogram_mags_is_{f_mag}.png')
     plt.clf()
 
-    # plot the empirical cdf (ecdf) for the UV magnitudes. Must take negative sign in order to reverse.
-    ecdf_uv = ECDF(-uv_band_count_rates)
+    # plot the empirical cdf (ecdf) for the UV magnitudes or count rates. Must take negative sign in order to reverse
+    # for magnitude units.
+    if f_mag:
+        ecdf_uv = ECDF(-uv_band)
+    else:
+        ecdf_uv = ECDF(uv_band)
     plt.plot(ecdf_uv.x, ecdf_uv.y)
-    plt.xticks(fontsize=12, labels=['13.8', '13.3', '12.8'],
-               ticks=[-13.8, -13.3, -12.8])
+    if f_mag:
+        plt.xticks(fontsize=12, labels=['13.8', '13.3', '12.8'],
+                   ticks=[-13.8, -13.3, -12.8])
     plt.yticks(fontsize=12)
-    plt.xlabel('UVW2 Magnitudes', fontsize=16, fontname='Times New Roman')
+    if f_mag:
+        plt.xlabel('UVW2 Magnitudes', fontsize=16, fontname='Times New Roman')
+    else:
+        plt.xlabel('UVW2 Flux', fontsize=16, fontname='Times New Roman')
     plt.tight_layout()
-    plt.savefig('figures/uv_ecdf')
+    plt.savefig(f'figures/uv_ecdf_mags_is_{f_mag}.png')
     plt.clf()
 
     # plot the UV band probability plot for Gaussian distribution
@@ -57,11 +72,15 @@ def main():
     ax.tick_params(axis='y', labelsize=12)
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.title.set_visible(False)
-    res = stats.probplot(-uv_band_count_rates, dist=stats.norm, plot=ax)
-    ax.set_yticks(ticks=[-14.0, -13.8, -13.6, -13.4, -13.2, -13.0, -12.8, -12.6, -12.4])
-    ax.set_yticklabels(labels=['14.0', '13.8', '13.6', '13.4', '13.2', '13.0', '12.8', '12.6', '12.4'])
+    if f_mag:
+        res = stats.probplot(-uv_band, dist=stats.norm, plot=ax)
+    else:
+        res = stats.probplot(uv_band, dist=stats.norm, plot=ax)
+    if f_mag:
+        ax.set_yticks(ticks=[-14.0, -13.8, -13.6, -13.4, -13.2, -13.0, -12.8, -12.6, -12.4])
+        ax.set_yticklabels(labels=['14.0', '13.8', '13.6', '13.4', '13.2', '13.0', '12.8', '12.6', '12.4'])
     plt.tight_layout()
-    plt.savefig('figures/uv_prob_plot')
+    plt.savefig(f'figures/uv_prob_plot_mags_is_{f_mag}.png')
 
     plt.clf()
 
@@ -77,7 +96,6 @@ def main():
     plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
     plt.yticks([0, 0.2, 0.4], fontsize=12)
-    #plt.xlabel('Swift Observed X-ray Log Count Rates', fontsize=16, fontname='Times New Roman')
     plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
     plt.tight_layout()
     plt.savefig('figures/new_xray_histogram')
@@ -107,9 +125,9 @@ def main():
 
     plt.clf()
 
-    print(stats.kstest(uv_band_count_rates, 'norm', args=(np.mean(uv_band_count_rates), np.std(uv_band_count_rates))))  # null vs alternative hypothesis for sample1. Dont reject equal distribution against alternative hypothesis: greater
+    print(stats.kstest(uv_band, 'norm', args=(np.mean(uv_band), np.std(uv_band))))  # null vs alternative hypothesis for sample1. Dont reject equal distribution against alternative hypothesis: greater
     print(stats.kstest(np.log(xray_band_count_rates), 'norm', args=(np.mean(np.log(xray_band_count_rates)), np.std(np.log(xray_band_count_rates)))))
-    print(stats.ks_2samp(uv_band_count_rates, uv_band_count_rates))
+    print(stats.ks_2samp(uv_band, uv_band))
 
 
 if __name__ == '__main__':

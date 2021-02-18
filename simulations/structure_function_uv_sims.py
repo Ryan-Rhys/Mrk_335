@@ -16,7 +16,6 @@ nsims = 1000  # number of simulated curves i.e length of gapped_file
 kernel = 'Matern'  # ['Matern', 'RQ']
 
 TIMINGS_FILE = '../processed_data/uv_simulations/uv_sim_times.pickle'
-
 GAPPED_FILE = 'sim_curves/w2_lightcurves.dat'
 GROUND_TRUTH_FILE = 'sim_curves/w2_lightcurves_no_gaps.dat'
 
