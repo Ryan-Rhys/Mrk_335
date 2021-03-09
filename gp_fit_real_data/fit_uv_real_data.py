@@ -16,8 +16,8 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 
 fix_noise = True  # Whether to fix the noise level
-generate_samples = True  # Whether to generate samples from the best-fit kernels.
-plot_mean = True  # Whether to plot the GP mean or the samples
+generate_samples = False  # Whether to generate samples from the best-fit kernels.
+plot_mean = False  # Whether to plot the GP mean or the samples
 n_samples = 1000  # number of samples to generate
 
 m = None
@@ -184,7 +184,7 @@ if __name__ == '__main__':
             fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
             ax.scatter(time, uv_band_flux_orig, marker='+', s=10, color='k')
             plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
-            plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
+            plt.ylabel('UVW2 Band Flux', fontsize=16, fontname='Times New Roman')
             plt.ylim(1e-14, 1.75e-13)
             plt.xlim(54150, 58700)
             plt.xticks([55000, 56000, 57000, 58000], fontsize=12)

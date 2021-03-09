@@ -2,7 +2,8 @@
 # Author: Ryan-Rhys Griffiths
 """
 Script for generating histograms of the UVOT and XROT observations from Mrk-335. Utilities for plotting the
-Empirical Cumulative Distribution Function (ECDF) and PP plots are also provided.
+Empirical Cumulative Distribution Function (ECDF) and PP plots are also provided in addition to Kolmogorov-Smirnov
+tests.
 """
 
 import pickle
@@ -19,7 +20,7 @@ f_mag = False  # If true, plot UVW2 in magnitudes instead of flux
 
 def main():
     """
-    Generate histograms, ECDFs and PP plots.
+    Generate histograms, ECDFs and PP plots and run Kolmogorov-Smirnov tests.
     """
 
     if f_mag:
@@ -29,14 +30,16 @@ def main():
         with open('../processed_data/uv/uv_band_flux.pickle', 'rb') as handle:
             uv_band = np.sort(pickle.load(handle).reshape(-1, 1).squeeze())
 
-    # plot the histogram
-    plt.hist(uv_band, bins=20, color="#00b764", alpha=0.5, density=True)
-    density = gaussian_kde(uv_band)
-    xs = np.linspace(np.min(uv_band), np.max(uv_band), 200)
+    # plot the histogram. Flux values multiplied by 1e14 for scaling.
+    plt.hist(uv_band*1e14, bins=20, color="#00b764", alpha=0.5, density=True)
+    density = gaussian_kde(uv_band*1e14)
+    xs = np.linspace(np.min(uv_band*1e14), np.max(uv_band*1e14), 200)
     plt.plot(xs, density(xs), color='k')
     plt.xticks(fontsize=12)
     if f_mag:
         plt.yticks([0, 1, 2], fontsize=12)
+    else:
+        plt.yticks([0.1, 0.2, 0.3])
     plt.ylabel('Density', fontsize=16, fontname='Times New Roman')
     if f_mag:
         plt.gca().invert_xaxis()
@@ -79,6 +82,9 @@ def main():
     if f_mag:
         ax.set_yticks(ticks=[-14.0, -13.8, -13.6, -13.4, -13.2, -13.0, -12.8, -12.6, -12.4])
         ax.set_yticklabels(labels=['14.0', '13.8', '13.6', '13.4', '13.2', '13.0', '12.8', '12.6', '12.4'])
+    else:
+        ax.set_yticks(ticks=[3e-14, 5e-14, 7e-14, 9e-14])
+        ax.set_yticklabels(labels=['3e-14', '5e-14', '7e-14', '9e-14'])
     plt.tight_layout()
     plt.savefig(f'figures/uv_prob_plot_mags_is_{f_mag}.png')
 
@@ -126,7 +132,7 @@ def main():
     plt.clf()
 
     print(stats.kstest(uv_band, 'norm', args=(np.mean(uv_band), np.std(uv_band))))  # null vs alternative hypothesis for sample1. Dont reject equal distribution against alternative hypothesis: greater
-    print(stats.kstest(np.log(xray_band_count_rates), 'norm', args=(np.mean(np.log(xray_band_count_rates)), np.std(np.log(xray_band_count_rates)))))
+    print(stats.kstest(xray_band_count_rates, 'norm', args=(np.mean(xray_band_count_rates), np.std(xray_band_count_rates))))
     print(stats.ks_2samp(uv_band, uv_band))
 
 

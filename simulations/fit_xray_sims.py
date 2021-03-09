@@ -45,7 +45,8 @@ if __name__ == '__main__':
                                                                                                  GROUND_TRUTH_FILE)
     n_sims = gapped_count_rates.shape[0]
 
-    # Add jitter ot the count rates to avoid numerical issues with log transform of zero values.
+    # Add jitter ot the count rates to avoid numerical issues with log transform of zero values. This is separate
+    # to what is referred to as jitter in the paper which is the noise value for the GP.
 
     jitter = 1e-10
     ground_truth_count_rates_matrix += jitter
