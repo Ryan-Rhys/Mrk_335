@@ -50,7 +50,7 @@ if __name__ == '__main__':
     plt.xlim([10, 700])
     plt.tight_layout()
     fig.legend(loc=4, bbox_to_anchor=[0.275, 0.75, 0.15, 0])
-    ax2.minorticks_off()
+    ax2.yaxis.set_minor_locator(mticker.NullLocator())  # set y-axis tick labels off only. Found by looking at the API for the minorticks_off() method.
     plt.savefig(f'cosmetic_figures/ground_truth_function_xray_on_same_axis_')
     plt.close()
 
@@ -89,6 +89,6 @@ if __name__ == '__main__':
     plt.xlim([10, 700])
     plt.tight_layout()
     fig.legend(loc=4, bbox_to_anchor=[0.275, 0.75, 0.15, 0])
-    ax2.minorticks_off()
+    ax2.yaxis.set_minor_locator(mticker.NullLocator())
     plt.savefig(f'cosmetic_figures/gp_function_xray_{kernel}_on_same_axis_{int(scale_factor * 100)}')
     plt.close()

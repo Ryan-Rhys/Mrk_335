@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 from structure_function_utils import compute_gp_structure_function
 
-use_matern = False
+use_matern = True
 n_samples = 50
 resolution = 5.3
 
@@ -20,12 +20,12 @@ if __name__ == '__main__':
         id = 'matern'
         tag = f'Matern_53_days_averaged_{n_samples}_samples'
         xray_handle = 'xray_samples_Matern_12_Kernel_noise_0.0001.txt'
-        uv_handle = 'uv_samples_Matern_12_Kernel_noise_0.036907630522088355.txt'
+        uv_handle = 'uv_samples_Matern_12_Kernel_noise_0.02735732327535883_n_samples_1000.txt'
     else:
         id = 'RQ'
         tag = f'RQ_53_days_averaged_{n_samples}_samples'
         xray_handle = 'xray_samples_Rational_Quadratic_Kernel_noise_0.0001.txt'
-        uv_handle = 'uv_samples_Rational_Quadratic_Kernel_noise_0.036907630522088355.txt'
+        uv_handle = 'uv_samples_Rational_Quadratic_Kernel_noise_0.02735732327535883_n_samples_1000.txt'
 
     time_grid = np.arange(54236, 58630, 1).reshape(-1, 1)
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     uv_structure_function_samples = np.array(uv_structure_function_samples)
     uv_mean_structure_function = np.mean(uv_structure_function_samples, axis=0)
-    uv_std_structure_function = np.std(uv_structure_function_samples, axis=0)
+    uv_std_structure_function = np.std(uv_structure_function_samples, axis=0)  # Note that this is the standard deviation and not the standard error
 
     np.savetxt(f'sf_gp_data/uv/{id}_{n_samples}_times', uv_tao_plot)
     np.savetxt(f'sf_gp_data/uv/mean_structure_function_{n_samples}_{id}', uv_mean_structure_function)

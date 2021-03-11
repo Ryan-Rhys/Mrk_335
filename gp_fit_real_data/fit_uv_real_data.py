@@ -17,7 +17,8 @@ import tensorflow as tf
 
 fix_noise = True  # Whether to fix the noise level
 generate_samples = False  # Whether to generate samples from the best-fit kernels.
-plot_mean = True  # Whether to plot the GP mean or the samples
+plot_mean = False  # Whether to plot the GP mean or the samples
+n_samples = 1000  # number of samples to generate
 
 m = None
 
@@ -35,17 +36,20 @@ if __name__ == '__main__':
 
     # Load the UV band data.
 
-    with open('../processed_data/uv/uv_times.pickle', 'rb') as handle:
+    with open('../processed_data/uv/uv_fl_times.pickle', 'rb') as handle:
         time = pickle.load(handle).reshape(-1, 1)
-    with open('../processed_data/uv/uv_band_count_rates.pickle', 'rb') as handle:
-        uv_band_count_rates = pickle.load(handle).reshape(-1, 1)
-    with open('../processed_data/uv/uv_band_count_errors.pickle', 'rb') as handle:
-        uv_band_count_errors = pickle.load(handle).reshape(-1, 1)
+    with open('../processed_data/uv/uv_band_flux.pickle', 'rb') as handle:
+        uv_band_flux = pickle.load(handle).reshape(-1, 1)
+    with open('../processed_data/uv/uv_band_flux_errors.pickle', 'rb') as handle:
+        uv_band_flux_errors = pickle.load(handle).reshape(-1, 1)
+
+    snr = np.mean(uv_band_flux)/np.mean(uv_band_flux_errors)  # signal to noise ratio is ca. 30 so we ignore measurement noise.
+    uv_band_flux_orig = uv_band_flux # original uv band flux for plotting.
 
     # We standardise the outputs
 
-    count_scaler = StandardScaler()
-    counts = count_scaler.fit_transform(uv_band_count_rates)
+    flux_scaler = StandardScaler()
+    uv_band_flux = flux_scaler.fit_transform(uv_band_flux)
 
     # We do kernel selection by comparison of the negative log marginal likelihood.
 
@@ -66,16 +70,19 @@ if __name__ == '__main__':
         # GP uses a constant mean function, where the constant is set to be the empirical average of the standardised
         # counts
 
-        m = gpflow.models.GPR(data=(time, counts),
-                              mean_function=Constant(np.mean(counts)),
+        m = gpflow.models.GPR(data=(time, uv_band_flux),
+                              mean_function=Constant(np.mean(uv_band_flux)),
                               kernel=k,
                               noise_variance=1)
 
         if fix_noise:
 
-            # Fix a noise level to be the average experimental error observed in the dataset (0.037)
+            # Fix a noise level to be the average experimental error observed in the dataset (0.037) for magnitudes
+            # Noise level is 2.0364e-15 for the flux values.
+            # Standardisation destroys this information so setting noise to be mean of standardised values divided by
+            # the SNR in the orignal space.
 
-            fixed_noise = np.mean(uv_band_count_errors)
+            fixed_noise = np.mean(np.abs(uv_band_flux/snr))
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
             m.likelihood.variance = fixed_noise
 
@@ -98,9 +105,9 @@ if __name__ == '__main__':
 
             if name == 'Matern_12_Kernel' or name == 'Rational_Quadratic_Kernel':
 
-                samples = tf.squeeze(m.predict_f_samples(time_test, 10000))
-                samples = count_scaler.inverse_transform(samples)
-                np.savetxt('samples/uv/uv_samples_{}_noise_{}.txt'.format(name, fixed_noise), samples, fmt='%.2f')
+                samples = tf.squeeze(m.predict_f_samples(time_test, n_samples))
+                samples = flux_scaler.inverse_transform(samples)
+                np.savetxt('samples/uv/uv_samples_{}_noise_{}_n_samples_{}.txt'.format(name, fixed_noise, n_samples), samples, fmt='%.50f')
 
         np.savetxt('experiment_params/uv/real_mean_and_{}.txt'.format(name), mean, fmt='%.2f')
         np.savetxt('experiment_params/uv/real_error_upper_and{}.txt'.format(name), upper, fmt='%.2f')
@@ -111,9 +118,9 @@ if __name__ == '__main__':
 
         # For plotting we transform the counts back to the original domain.
 
-        mean = count_scaler.inverse_transform(mean)
-        upper = count_scaler.inverse_transform(upper)
-        lower = count_scaler.inverse_transform(lower)
+        mean = flux_scaler.inverse_transform(mean)
+        upper = flux_scaler.inverse_transform(upper)
+        lower = flux_scaler.inverse_transform(lower)
 
         # Plot the results
 
@@ -130,24 +137,24 @@ if __name__ == '__main__':
                 mean_color = "#0d9a00"
 
             fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-            ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            ax.scatter(time, uv_band_flux_orig, marker='+', s=10, color='k')
             plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
-            plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
-            plt.ylim(11.15, 14.2)
+            plt.ylabel('UVW2 Band Flux', fontsize=16, fontname='Times New Roman')
+            plt.ylim(1e-14, 1.75e-13)
             plt.xlim(54150, 58700)
             plt.xticks([55000, 56000, 57000, 58000], fontsize=12)
-            plt.yticks([12, 13, 14], fontsize=12)
+            plt.yticks([5e-14, 1e-13, 1.5e-13], fontsize=12)
             line, = plt.plot(time_test, mean, lw=1, color=mean_color, alpha=0.75)
             _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
             # Create an inset
 
             axins = zoomed_inset_axes(ax, 2.5, loc=2)  # zoom-factor: 2.5, location: top-left
-            axins.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            axins.scatter(time, uv_band_flux_orig, marker='+', s=10, color='k')
             inset_line, = axins.plot(time_test, mean, lw=1, color=mean_color, alpha=0.75)
             _ = axins.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
-            x1, x2, y1, y2 = 56475, 56725, 12.95, 13.48  # specify the limits
+            x1, x2, y1, y2 = 56465, 56750, 0.45e-13, 0.75e-13  # specify the limits
             axins.set_xlim(x1, x2)  # apply the x-limits
             axins.set_ylim(y1, y2)  # apply the y-limits
             mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")  # mark inset
@@ -155,7 +162,7 @@ if __name__ == '__main__':
             plt.xticks(visible=False)
             axins.set_xticks([])
             axins.set_yticks([])
-            ax.invert_yaxis()
+            #ax.invert_yaxis()  # Only for magnitudes
 
             if fix_noise:
                 plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_and_{}_noise_color_{}_mean.png'.format(name, log_lik, fixed_noise, mean_color))
@@ -172,27 +179,27 @@ if __name__ == '__main__':
             # Generate a sample
 
             sample = m.predict_f_samples(time_test)
-            sample = count_scaler.inverse_transform(sample)
+            sample = flux_scaler.inverse_transform(sample)
 
             fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-            ax.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            ax.scatter(time, uv_band_flux_orig, marker='+', s=10, color='k')
             plt.xlabel('Time (days)', fontsize=16, fontname='Times New Roman')
-            plt.ylabel('UVW2 Band Magnitudes', fontsize=16, fontname='Times New Roman')
-            plt.ylim(11.15, 14.2)
+            plt.ylabel('UVW2 Band Flux', fontsize=16, fontname='Times New Roman')
+            plt.ylim(1e-14, 1.75e-13)
             plt.xlim(54150, 58700)
             plt.xticks([55000, 56000, 57000, 58000], fontsize=12)
-            plt.yticks([12, 13, 14], fontsize=12)
+            plt.yticks([5e-14, 1e-13, 1.5e-13], fontsize=12)
             line, = plt.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
             _ = plt.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
             # Create an inset
 
             axins = zoomed_inset_axes(ax, 2.5, loc=2)  # zoom-factor: 3.2, location: top-left
-            axins.scatter(time, uv_band_count_rates, marker='+', s=10, color='k')
+            axins.scatter(time, uv_band_flux_orig, marker='+', s=10, color='k')
             inset_line, = axins.plot(time_test, sample, lw=1, color=sample_color, alpha=0.75)
             _ = axins.fill_between(time_test[:, 0], lower, upper, color=uncertainty_color, alpha=0.2)
 
-            x1, x2, y1, y2 = 56475, 56725, 12.95, 13.48  # specify the limits
+            x1, x2, y1, y2 = 56475, 56725, 0.45e-13, 0.75e-13 # specify the limits  # 12.95, 13.48 are magnitude limits
             axins.set_xlim(x1, x2)  # apply the x-limits
             axins.set_ylim(y1, y2)  # apply the y-limits
             mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")  # mark inset
@@ -200,7 +207,7 @@ if __name__ == '__main__':
             plt.xticks(visible=False)
             axins.set_xticks([])
             axins.set_yticks([])
-            ax.invert_yaxis()
+            #ax.invert_yaxis()  # Only for magnitude units
 
             if fix_noise:
                 plt.savefig('experiment_figures/uv/{}_and_{}_log_lik_and_{}_noise_color_{}_sample.png'.format(name,

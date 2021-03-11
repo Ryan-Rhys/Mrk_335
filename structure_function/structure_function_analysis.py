@@ -1,7 +1,7 @@
 # Copyright Ryan-Rhys Griffiths 2020
 # Author: Ryan-Rhys Griffiths
 """
-This script performs a structure function analysis of the UW2 and X-ray bands of Mrk-335.
+This script performs a structure function analysis of the UVW2 and X-ray bands of Mrk-335.
 """
 
 import pickle
@@ -74,11 +74,11 @@ if __name__ == '__main__':
         plt.savefig(f'figures/Structure_function_xray_{id}')
     plt.close()
 
-    with open('../processed_data/uv/uv_times.pickle', 'rb') as handle:
+    with open('../processed_data/uv/uv_fl_times.pickle', 'rb') as handle:
         uv_time = pickle.load(handle).reshape(-1, 1)[0:uv_end_of_range]
-    with open('../processed_data/uv/uv_band_count_rates.pickle', 'rb') as handle:
+    with open('../processed_data/uv/uv_band_flux.pickle', 'rb') as handle:
         uv_band_count_rates = pickle.load(handle).reshape(-1, 1)[0:uv_end_of_range]
-    with open('../processed_data/uv/uv_band_count_errors.pickle', 'rb') as handle:
+    with open('../processed_data/uv/uv_band_flux_errors.pickle', 'rb') as handle:
         uv_band_count_errors = pickle.load(handle).reshape(-1, 1)[0:uv_end_of_range]
 
     if detrend:
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1)
     plt.scatter(uv_tao_plot, uv_structure_function_vals, s=10, marker='+')
-    plt.errorbar(uv_tao_plot, uv_structure_function_vals, yerr=uv_structure_function_errors, fmt='o', markersize=3, linewidth=1)
+    plt.errorbar(uv_tao_plot, uv_structure_function_vals, yerr=uv_structure_function_errors.flatten(), fmt='o', markersize=3, linewidth=1)
     plt.xscale('log')
     plt.yscale('log')
     plt.xlim(10, 700)
