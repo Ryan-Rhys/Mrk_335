@@ -6,7 +6,7 @@ This code repository contains all source code for the paper given in the title, 
 lightcurves of Mrk 335 using a Gaussian process and use these "GP Lightcurves" to perform a 
 cross-correlation analysis.
 
-<img src="bootstrap_slowish.gif" width="600" title="Bootstrap Uncertainty Computation">|
+<img src="bootstrap_slowish.gif" width="600" title="Bootstrap Uncertainty Computation" class="center">|
 
 
 ## Installation
@@ -30,11 +30,11 @@ X-ray            |  UVW2
 The simulations folder contains code for performing lightcurve simulations according
 to the Timmer and Konig algorithm.
 
+<img src="sim_table.png" width="800" title="Simulation Results Table">|
+
 ## Structure Function Computation
 
-<img src="sf.png" width="800" title="Histograms of the Observational Data">|
-
-## Autocorrelation
+<img src="sf.png" width="800" title="Gaussian Process Structure Functions">|
 
 ## Log-Normality Tests
 
