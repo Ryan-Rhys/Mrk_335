@@ -6,7 +6,7 @@ This code repository contains all source code for the paper given in the title, 
 lightcurves of Mrk 335 using a Gaussian process and use these "GP Lightcurves" to perform a 
 cross-correlation analysis.
 
-<img src="bootstrap_slowish.gif" width="800" title="Bootstrap Uncertainty Computation">|
+<img src="bootstrap_slowish.gif" width="600" title="Bootstrap Uncertainty Computation">|
 
 
 ## Installation
@@ -21,9 +21,9 @@ pip install scipy
 
 ## Gaussian Process Fitting to Observational Data
 
-UVW2            |  X-ray
+X-ray            |  UVW2
 :-------------------------:|:-------------------------:
-<img src="uv_gp.png" width="400" title="UVW2 Band GP Lightcurve">|    <img src="xray_gp.png" width="400" title="X-Ray Band GP Lightcurve">
+<img src="xray_gp.png" width="400" title="X-ray Band GP Lightcurve">|    <img src="uv_gp.png" width="400" title="UVW2 Band GP Lightcurve">
 
 ## Lightcurve Simulations
 
@@ -31,6 +31,8 @@ The simulations folder contains code for performing lightcurve simulations accor
 to the Timmer and Konig algorithm.
 
 ## Structure Function Computation
+
+<img src="sf.png" width="800" title="Histograms of the Observational Data">|
 
 ## Autocorrelation
 
