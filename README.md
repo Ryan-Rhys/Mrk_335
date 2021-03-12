@@ -6,7 +6,7 @@ This repo contains all source code for the paper "Modelling the Multiwavelength 
 " available here (https://arxiv.org/abs/2103.06838). We interpolate the gaps in the observational
 lightcurves of Mrk 335 using a Gaussian process and use these "GP Lightcurves" to perform a 
 cross-correlation analysis. The (purely decorative) gif below illustrates the resampling procedure for obtaining bootstrap uncertainty estimates
-on the parameters of power law fits (black) to Gaussian process structure functions.
+on the parameters of power law fits (black) to a Gaussian process structure functions (red).
 
 <p align="center">
   <img width="600" src="bootstrap_slowish.gif" title="Bootstrap Uncertainty Computation">
