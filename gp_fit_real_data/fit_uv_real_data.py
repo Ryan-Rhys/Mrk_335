@@ -66,7 +66,7 @@ if __name__ == '__main__':
         m = gpflow.models.GPR(data=(time, uv_band_flux),
                               mean_function=Constant(np.mean(uv_band_flux)),
                               kernel=k,
-                              noise_variance=1)
+                              noise_variance=0.1)
 
         if fix_noise:
 
