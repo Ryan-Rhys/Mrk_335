@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 
-kernel = 'RQ'  # ['Matern' 'RQ'] are the options
+kernel = 'Matern'  # ['Matern' 'RQ'] are the options
 n_samples = 50
 bootstrap_samples = 200
 broken = False
@@ -166,7 +166,7 @@ def bootstrap_sample(tau, mean, std, bootstrap_samples, broken=False, uv=False, 
                 ax2.set_ylim([0.5, 3.5])
                 plt.xlim([10, 700])
                 plt.tight_layout()
-                fig.legend(loc=4, bbox_to_anchor=[0.275, 0.75, 0.15, 0])
+                fig.legend(loc=4, bbox_to_anchor=[0.275, 0.67, 0.15, 0])
                 ax2.yaxis.set_minor_locator(mticker.NullLocator())
                 plt.savefig(f'gif_figures/xray_{kernel}_{i}.png')
 

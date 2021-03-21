@@ -23,13 +23,6 @@ n_samples = 1000  # number of samples to generate
 m = None
 
 
-def objective_closure():
-    """
-    Objective function for GP-optimization
-    """
-    return -m.log_marginal_likelihood()
-
-
 if __name__ == '__main__':
 
     np.random.seed(42)  # Set the same random seed for training
@@ -80,14 +73,14 @@ if __name__ == '__main__':
             # Fix a noise level to be the average experimental error observed in the dataset (0.037) for magnitudes
             # Noise level is 2.0364e-15 for the flux values.
             # Standardisation destroys this information so setting noise to be mean of standardised values divided by
-            # the SNR in the orignal space.
+            # the SNR in the original space.
 
             fixed_noise = np.mean(np.abs(uv_band_flux/snr))
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
-            m.likelihood.variance = fixed_noise
+            m.likelihood.variance.assign(fixed_noise)
 
         opt = gpflow.optimizers.Scipy()
-        opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+        opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=1000))
         print_summary(m)
 
         # We specify the grid of time points on which we wish to predict the count rate

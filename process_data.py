@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     if f_plot:
         plt.scatter(x_ray_times, x_ray_band_count_rates, s=15, marker='.')
-        plt.errorbar(x_ray_times, x_ray_band_count_rates, yerr=x_ray_band_count_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
+        #plt.errorbar(x_ray_times, x_ray_band_count_rates, yerr=x_ray_band_count_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
         plt.xlabel('Time')
         plt.ylabel('X-ray Band Count Rate')
         plt.title('X-ray Data for Mrk 335')
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         plt.show()
         plt.clf()
         plt.scatter(uv_cr_times, uv_band_count_rates, s=15, marker='.')
-        plt.errorbar(uv_cr_times, uv_band_count_rates, yerr=uv_band_count_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
+        #plt.errorbar(uv_cr_times, uv_band_count_rates, yerr=uv_band_count_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
         plt.xlabel('Time')
         plt.ylabel('UVW2 Band Count Rates')
         plt.title('UVW2 Data for Mrk 335')
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         plt.show()
         plt.clf()
         plt.scatter(uv_mag_times, uv_band_magnitudes, s=15, marker='.')
-        plt.errorbar(uv_mag_times, uv_band_magnitudes, yerr=uv_band_magnitudes_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
+        #plt.errorbar(uv_mag_times, uv_band_magnitudes, yerr=uv_band_magnitudes_errors, elinewidth=0.1, capsize=0.5, barsabove=True, capthick=1, linestyle="None", ecolor='r')
         plt.xlabel('Time')
         plt.ylabel('UVW2 Band Magnitudes')
         plt.title('UVW2 Data for Mrk 335')
