@@ -23,13 +23,6 @@ n_samples = 1000  # number of samples to generate
 m = None
 
 
-def objective_closure():
-    """
-    Objective function for GP-optimization
-    """
-    return -m.log_marginal_likelihood()
-
-
 if __name__ == '__main__':
 
     np.random.seed(42)  # Set the same random seed for training
@@ -73,7 +66,7 @@ if __name__ == '__main__':
         m = gpflow.models.GPR(data=(time, uv_band_flux),
                               mean_function=Constant(np.mean(uv_band_flux)),
                               kernel=k,
-                              noise_variance=1)
+                              noise_variance=0.1)
 
         if fix_noise:
 
@@ -84,10 +77,10 @@ if __name__ == '__main__':
 
             fixed_noise = np.mean(np.abs(uv_band_flux/snr))
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
-            m.likelihood.variance = fixed_noise
+            m.likelihood.variance.assign(fixed_noise)
 
         opt = gpflow.optimizers.Scipy()
-        opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+        opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=1000))
         print_summary(m)
 
         # We specify the grid of time points on which we wish to predict the count rate
