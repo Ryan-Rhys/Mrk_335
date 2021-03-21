@@ -73,7 +73,7 @@ if __name__ == '__main__':
             # Fix a noise level to be the average experimental error observed in the dataset (0.037) for magnitudes
             # Noise level is 2.0364e-15 for the flux values.
             # Standardisation destroys this information so setting noise to be mean of standardised values divided by
-            # the SNR in the orignal space.
+            # the SNR in the original space.
 
             fixed_noise = np.mean(np.abs(uv_band_flux/snr))
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
