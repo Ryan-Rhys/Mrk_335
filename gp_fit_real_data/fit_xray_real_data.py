@@ -17,18 +17,11 @@ from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 
 fix_noise = True
-generate_samples = True  # Whether to generate samples from the best-fit kernels.
+generate_samples = False  # Whether to generate samples from the best-fit kernels.
 plot_mean = False  # Whether to plot the GP mean or the samples (True = mean, False = sample)
 n_samples = 1000  # Number of samples to take
 
 m = None
-
-
-def objective_closure():
-    """
-    Objective function for GP-optimization
-    """
-    return -m.log_marginal_likelihood()
 
 
 if __name__ == '__main__':
@@ -75,7 +68,7 @@ if __name__ == '__main__':
         m = gpflow.models.GPR(data=(time, counts),
                               mean_function=Constant(np.mean(counts)),
                               kernel=k,
-                              noise_variance=1)
+                              noise_variance=0.1)
         if fix_noise:
 
             # Fix a noise level to be a jitter of 1e-4 because the log transform means we lose access to the
@@ -84,10 +77,10 @@ if __name__ == '__main__':
 
             fixed_noise = np.mean(np.abs(counts/snr))  # 0.05, current val, fixed_noise = np.float64(0.0001) previously
             set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
-            m.likelihood.variance = fixed_noise
+            m.likelihood.variance.assign(fixed_noise)
 
         opt = gpflow.optimizers.Scipy()
-        opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+        opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=1000))
         print_summary(m)
         # We specify the grid of time points on which we wish to predict the count rate
         time_test = np.arange(54236, 58630, 1).reshape(-1, 1)

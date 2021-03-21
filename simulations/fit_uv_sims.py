@@ -29,13 +29,6 @@ GAPPED_FILE = f'sim_curves/w2_lightcurves.dat'
 GROUND_TRUTH_FILE = f'sim_curves/w2_lightcurves_no_gaps.dat'
 
 
-def objective_closure():
-    """
-    Objective function for GP-optimization
-    """
-    return -m.log_marginal_likelihood()
-
-
 if __name__ == '__main__':
 
     tf.random.set_seed(42)
@@ -100,14 +93,14 @@ if __name__ == '__main__':
             if fix_noise:
                 fixed_noise = np.float64(0.001)  # was 0.05 previously
                 set_trainable(m.likelihood.variance, False)  # We don't want to optimise the noise level in this case.
-                m.likelihood.variance = fixed_noise
+                m.likelihood.variance.assign(fixed_noise)
 
             opt = gpflow.optimizers.Scipy()
 
             # If Cholesky decomposition error, then skip
 
             try:
-                opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+                opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=1000))
             except Exception:
                 continue
 
