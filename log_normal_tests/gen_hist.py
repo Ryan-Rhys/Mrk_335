@@ -53,7 +53,10 @@ def main():
         ecdf_uv = ECDF(-uv_band)
     else:
         ecdf_uv = ECDF(uv_band)
-    plt.plot(ecdf_uv.x, ecdf_uv.y)
+        gaussian_samples = np.std(uv_band) * np.random.randn(5000) + np.mean(uv_band)
+        cdf_gaussian_uv = ECDF(gaussian_samples)
+    plt.plot(ecdf_uv.x, ecdf_uv.y, label='ECDF', linewidth='3')
+    plt.plot(cdf_gaussian_uv.x, cdf_gaussian_uv.y, '--', color='r', label='Gaussian CDF')
     if f_mag:
         plt.xticks(fontsize=12, labels=['13.8', '13.3', '12.8'],
                    ticks=[-13.8, -13.3, -12.8])
@@ -62,6 +65,8 @@ def main():
         plt.xlabel('UVW2 Magnitudes', fontsize=16, fontname='Times New Roman')
     else:
         plt.xlabel('UVW2 Flux', fontsize=16, fontname='Times New Roman')
+        plt.legend(fontsize=14)
+        plt.xlim(0.3e-13, 0.95e-13)
     plt.tight_layout()
     plt.savefig(f'figures/uv_ecdf_mags_is_{f_mag}.png')
     plt.clf()
@@ -109,10 +114,14 @@ def main():
 
     # plot the empirical cdf (ecdf) for the x-ray band count rate
     ecdf_xray = ECDF(xray_band_count_rates)
+    gaussian_cdf_xray = ECDF(np.std(xray_band_count_rates) * np.random.randn(5000) + np.mean(xray_band_count_rates))
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-    plt.plot(ecdf_xray.x, ecdf_xray.y)
+    plt.plot(ecdf_xray.x, ecdf_xray.y, linewidth='3', label='ECDF')
+    plt.plot(gaussian_cdf_xray.x, gaussian_cdf_xray.y, '--', color='r', label='Gaussian CDF')
     plt.xlabel('Log Count Rate', fontsize=16, fontname='Times New Roman')
+    plt.legend(fontsize='14')
+    plt.xlim(-4, 1)
     plt.tight_layout()
     plt.savefig('figures/xray_ecdf')
     plt.clf()
