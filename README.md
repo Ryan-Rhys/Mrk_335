@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 This repo contains all source code for the paper "Modelling the Multiwavelength Variability of Mrk 335 using Gaussian Processes
-" available here (https://arxiv.org/abs/2103.06838). We interpolate the gaps in the observational
+" available here ([https://iopscience.iop.org/article/10.3847/1538-4357/abfa9f/meta](https://iopscience.iop.org/article/10.3847/1538-4357/abfa9f/meta)). We interpolate the gaps in the observational
 lightcurves of Mrk 335 using a Gaussian process and use these "GP Lightcurves" to perform a 
 cross-correlation analysis. The (purely decorative) gif below illustrates the resampling procedure for obtaining bootstrap uncertainty estimates
 on the parameters of power law fits (black) to a Gaussian process structure function (red).
@@ -61,12 +61,14 @@ as well as statistical hypothesis testing using the Kolmogorov-Smirnov test.
 If you find this code useful please consider citing the following paper
 
 ```
-@misc{griffiths2021modelling,
-      title={Modelling the Multiwavelength Variability of Mrk 335 using Gaussian Processes}, 
-      author={Ryan-Rhys Griffiths and Jiachen Jiang and Douglas J. K. Buisson and Dan R. Wilkins and Luigi C. Gallo and Adam Ingram and Alpha A. Lee and Dirk Grupe and Erin Kara and Michael L. Parker and William Alston and Anthony Bourached and George Cann and Andrew Young and Stefanie Komossa},
-      year={2021},
-      eprint={2103.06838},
-      archivePrefix={arXiv},
-      primaryClass={astro-ph.HE}
+@article{griffiths2021modeling,
+  title={Modeling the Multiwavelength Variability of Mrk 335 Using Gaussian Processes},
+  author={Griffiths, Ryan-Rhys and Jiang, Jiachen and Buisson, Douglas JK and Wilkins, Dan and Gallo, Luigi C and Ingram, Adam and Grupe, Dirk and Kara, Erin and Parker, Michael L and Alston, William and others},
+  journal={The Astrophysical Journal},
+  volume={914},
+  number={2},
+  pages={144},
+  year={2021},
+  publisher={IOP Publishing}
 }
 ```
